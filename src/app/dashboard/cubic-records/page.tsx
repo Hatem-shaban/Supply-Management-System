@@ -51,20 +51,27 @@ export default function CubicRecordsPage() {
     e.preventDefault()
     setSubmitError('')
     setSubmitting(true)
-    const { error } = await supabase.from('cubic_records').insert({
-      company_name: form.company_name,
-      vehicle_number: form.vehicle_number,
-      cubic_capacity: parseFloat(form.cubic_capacity) || 0,
-      location: form.location,
-      company_price: parseFloat(form.company_price) || 0,
-    })
-    setSubmitting(false)
-    if (error) {
-      setSubmitError(error.message)
-    } else {
-      setShowModal(false)
-      setForm(emptyForm)
-      fetchData()
+    try {
+      const { data, error } = await supabase.from('cubic_records').insert({
+        company_name: form.company_name,
+        vehicle_number: form.vehicle_number,
+        cubic_capacity: parseFloat(form.cubic_capacity) || 0,
+        location: form.location,
+        company_price: parseFloat(form.company_price) || 0,
+      }).select()
+      console.log('Insert result:', { data, error })
+      if (error) {
+        setSubmitError(error.message)
+      } else {
+        setShowModal(false)
+        setForm(emptyForm)
+        fetchData()
+      }
+    } catch (err) {
+      console.error('Insert exception:', err)
+      setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+    } finally {
+      setSubmitting(false)
     }
   }
 
