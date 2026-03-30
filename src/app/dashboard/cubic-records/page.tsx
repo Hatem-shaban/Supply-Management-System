@@ -29,6 +29,8 @@ export default function CubicRecordsPage() {
   const [showModal, setShowModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
+  const [submitError, setSubmitError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (role !== 'admin') router.push('/dashboard')
@@ -47,6 +49,8 @@ export default function CubicRecordsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError('')
+    setSubmitting(true)
     const { error } = await supabase.from('cubic_records').insert({
       company_name: form.company_name,
       vehicle_number: form.vehicle_number,
@@ -54,7 +58,10 @@ export default function CubicRecordsPage() {
       location: form.location,
       company_price: parseFloat(form.company_price) || 0,
     })
-    if (!error) {
+    setSubmitting(false)
+    if (error) {
+      setSubmitError(error.message)
+    } else {
       setShowModal(false)
       setForm(emptyForm)
       fetchData()
@@ -123,7 +130,7 @@ export default function CubicRecordsPage() {
           <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white rounded-t-xl">
               <h2 className="text-lg font-bold">إضافة سجل تكعيب</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => { setShowModal(false); setSubmitError('') }} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -161,9 +168,18 @@ export default function CubicRecordsPage() {
                   className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
 
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+                  {submitError}
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium">إضافة</button>
-                <button type="button" onClick={() => setShowModal(false)}
+                <button type="submit" disabled={submitting}
+                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+                  {submitting ? 'جاري الإضافة...' : 'إضافة'}
+                </button>
+                <button type="button" onClick={() => { setShowModal(false); setSubmitError('') }}
                   className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
               </div>
             </form>
