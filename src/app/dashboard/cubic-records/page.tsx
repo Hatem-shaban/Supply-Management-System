@@ -51,27 +51,48 @@ export default function CubicRecordsPage() {
     e.preventDefault()
     setSubmitError('')
     setSubmitting(true)
+
+    // Global safety timeout - if ANYTHING hangs, this fires
+    const safetyTimer = setTimeout(() => {
+      setSubmitError('انتهت المهلة. العملية استغرقت وقتاً طويلاً.')
+      setSubmitting(false)
+    }, 12000)
+
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (!supabaseUrl || !supabaseKey) {
-        setSubmitError('إعدادات الاتصال غير موجودة (SUPABASE_URL/KEY)')
+        clearTimeout(safetyTimer)
+        setSubmitError(`إعدادات الاتصال غير موجودة: URL=${supabaseUrl ? 'OK' : 'MISSING'}, KEY=${supabaseKey ? 'OK' : 'MISSING'}`)
         setSubmitting(false)
         return
       }
 
-      const { data: { session } } = await supabase.auth.getSession()
-      const accessToken = session?.access_token
+      // Get session with its own timeout
+      let accessToken = ''
+      try {
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('SESSION_TIMEOUT')), 5000))
+        ])
+        accessToken = sessionResult.data?.session?.access_token || ''
+      } catch {
+        clearTimeout(safetyTimer)
+        setSubmitError('تعذر التحقق من الجلسة (timeout). أعد تحميل الصفحة وسجل الدخول مرة أخرى.')
+        setSubmitting(false)
+        return
+      }
 
       if (!accessToken) {
+        clearTimeout(safetyTimer)
         setSubmitError('انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.')
         setSubmitting(false)
         return
       }
 
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 10000)
+      const fetchTimer = setTimeout(() => controller.abort(), 8000)
 
       const res = await fetch(`${supabaseUrl}/rest/v1/cubic_records`, {
         method: 'POST',
@@ -91,7 +112,8 @@ export default function CubicRecordsPage() {
         signal: controller.signal,
       })
 
-      clearTimeout(timeout)
+      clearTimeout(fetchTimer)
+      clearTimeout(safetyTimer)
 
       if (!res.ok) {
         const errBody = await res.text()
@@ -102,8 +124,9 @@ export default function CubicRecordsPage() {
         fetchData()
       }
     } catch (err) {
+      clearTimeout(safetyTimer)
       if (err instanceof DOMException && err.name === 'AbortError') {
-        setSubmitError('انتهت مهلة الاتصال (10 ثوانٍ). تحقق من اتصال الإنترنت.')
+        setSubmitError('انتهت مهلة الاتصال بالخادم (8 ثوانٍ).')
       } else {
         setSubmitError(err instanceof Error ? err.message : String(err))
       }
