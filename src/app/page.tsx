@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,10 +16,13 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
+    const raw = username.trim().toLowerCase()
+    const email = raw.includes('@') ? raw : `${raw}@supplysystem.com`
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('بيانات الدخول غير صحيحة')
+      setError('اسم المستخدم أو كلمة المرور غير صحيحة')
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -41,14 +44,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">اسم المستخدم</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="example@email.com"
-              dir="ltr"
+              placeholder="اكتب اسم المستخدم"
               required
             />
           </div>

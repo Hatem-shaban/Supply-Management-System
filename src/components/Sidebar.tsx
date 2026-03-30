@@ -12,6 +12,7 @@ const menuItems = [
   { label: 'سجل الدفعات', path: '/dashboard/payments', adminOnly: true },
   { label: 'تسعيرة المحاجر', path: '/dashboard/quarry-pricing', adminOnly: true },
   { label: 'مصروفات', path: '/dashboard/expenses', adminOnly: true },
+  { label: 'إدارة المستخدمين', path: '/dashboard/users', adminOnly: true },
 ]
 
 const reportItems = [
