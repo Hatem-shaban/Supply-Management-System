@@ -52,7 +52,6 @@ export default function CubicRecordsPage() {
     setSubmitError('')
     setSubmitting(true)
     try {
-      // Check auth session first
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
         setSubmitError('انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.')
@@ -60,19 +59,20 @@ export default function CubicRecordsPage() {
         return
       }
 
-      // Use AbortController for timeout
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
-
-      const { data, error } = await supabase.from('cubic_records').insert({
+      const insertPayload = {
         company_name: form.company_name,
         vehicle_number: form.vehicle_number,
         cubic_capacity: parseFloat(form.cubic_capacity) || 0,
         location: form.location,
         company_price: parseFloat(form.company_price) || 0,
-      }).select().abortSignal(controller.signal)
+      }
 
-      clearTimeout(timeout)
+      const insertPromise = supabase.from('cubic_records').insert(insertPayload).select()
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+      )
+
+      const { data, error } = await Promise.race([insertPromise, timeoutPromise])
 
       if (error) {
         setSubmitError(error.message)
@@ -82,10 +82,11 @@ export default function CubicRecordsPage() {
         fetchData()
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        setSubmitError('انتهت مهلة الاتصال بالخادم. تحقق من اتصال الإنترنت أو حاول لاحقاً.')
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg === 'TIMEOUT') {
+        setSubmitError('انتهت مهلة الاتصال (10 ثوانٍ). تحقق من اتصال الإنترنت أو من إعدادات Supabase.')
       } else {
-        setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+        setSubmitError(msg)
       }
     } finally {
       setSubmitting(false)
