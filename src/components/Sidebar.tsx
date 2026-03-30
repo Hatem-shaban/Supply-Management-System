@@ -1,0 +1,155 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+
+const menuItems = [
+  { label: 'الرئيسية', path: '/dashboard', adminOnly: false },
+  { label: 'بونات', path: '/dashboard/vouchers', adminOnly: false },
+  { label: 'محضر التكعيب شركات', path: '/dashboard/cubic-records', adminOnly: true },
+  { label: 'سجل الدفعات', path: '/dashboard/payments', adminOnly: true },
+  { label: 'تسعيرة المحاجر', path: '/dashboard/quarry-pricing', adminOnly: true },
+  { label: 'مصروفات', path: '/dashboard/expenses', adminOnly: true },
+]
+
+const reportItems = [
+  { label: 'كشف حساب شركات', path: '/dashboard/reports/company' },
+  { label: 'كشف حساب العربيات', path: '/dashboard/reports/vehicles' },
+  { label: 'كشف حساب المحاجر', path: '/dashboard/reports/quarries' },
+  { label: 'كشف حساب ختامي', path: '/dashboard/reports/final' },
+]
+
+export default function Sidebar() {
+  const pathname = usePathname()
+  const { role, signOut } = useAuth()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [reportsOpen, setReportsOpen] = useState(false)
+
+  const filteredItems = menuItems.filter(item => !item.adminOnly || role === 'admin')
+
+  const isActive = (path: string) => pathname === path
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 right-0 left-0 bg-slate-800 text-white p-4 flex items-center justify-between z-50 shadow-lg">
+        <h1 className="text-lg font-bold">إدارة التوريدات</h1>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-700 transition"
+        >
+          {mobileOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 right-0 h-full w-64 bg-slate-800 text-white z-50 transform transition-transform duration-300 lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Logo */}
+        <div className="hidden lg:flex items-center gap-3 p-5 border-b border-slate-700">
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <h1 className="text-lg font-bold">إدارة التوريدات</h1>
+        </div>
+
+        {/* Navigation */}
+        <nav className="p-3 space-y-1 overflow-y-auto mt-14 lg:mt-0" style={{ maxHeight: 'calc(100vh - 140px)' }}>
+          {filteredItems.map(item => (
+            <Link
+              key={item.path}
+              href={item.path}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition text-sm ${
+                isActive(item.path)
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                  : 'text-slate-300 hover:bg-slate-700/70'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+
+          {/* Reports sub-menu */}
+          {role === 'admin' && (
+            <div>
+              <button
+                onClick={() => setReportsOpen(!reportsOpen)}
+                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition text-sm ${
+                  pathname.startsWith('/dashboard/reports')
+                    ? 'bg-blue-600/20 text-blue-300'
+                    : 'text-slate-300 hover:bg-slate-700/70'
+                }`}
+              >
+                <span>تقارير</span>
+                <svg
+                  className={`w-4 h-4 transform transition-transform ${reportsOpen ? 'rotate-90' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {reportsOpen && (
+                <div className="mr-4 mt-1 space-y-1 border-r border-slate-600 pr-3">
+                  {reportItems.map(item => (
+                    <Link
+                      key={item.path}
+                      href={item.path}
+                      onClick={() => setMobileOpen(false)}
+                      className={`block px-4 py-2.5 rounded-lg transition text-sm ${
+                        isActive(item.path)
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-400 hover:bg-slate-700/70 hover:text-slate-200'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </nav>
+
+        {/* Sign out */}
+        <div className="absolute bottom-0 right-0 left-0 p-3 border-t border-slate-700">
+          <button
+            onClick={signOut}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-slate-400 hover:bg-red-600/90 hover:text-white rounded-lg transition text-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            تسجيل الخروج
+          </button>
+        </div>
+      </aside>
+    </>
+  )
+}
