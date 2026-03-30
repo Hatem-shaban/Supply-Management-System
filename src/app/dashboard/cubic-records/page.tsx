@@ -52,14 +52,28 @@ export default function CubicRecordsPage() {
     setSubmitError('')
     setSubmitting(true)
     try {
+      // Check auth session first
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setSubmitError('انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.')
+        setSubmitting(false)
+        return
+      }
+
+      // Use AbortController for timeout
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+
       const { data, error } = await supabase.from('cubic_records').insert({
         company_name: form.company_name,
         vehicle_number: form.vehicle_number,
         cubic_capacity: parseFloat(form.cubic_capacity) || 0,
         location: form.location,
         company_price: parseFloat(form.company_price) || 0,
-      }).select()
-      console.log('Insert result:', { data, error })
+      }).select().abortSignal(controller.signal)
+
+      clearTimeout(timeout)
+
       if (error) {
         setSubmitError(error.message)
       } else {
@@ -68,8 +82,11 @@ export default function CubicRecordsPage() {
         fetchData()
       }
     } catch (err) {
-      console.error('Insert exception:', err)
-      setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setSubmitError('انتهت مهلة الاتصال بالخادم. تحقق من اتصال الإنترنت أو حاول لاحقاً.')
+      } else {
+        setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+      }
     } finally {
       setSubmitting(false)
     }
