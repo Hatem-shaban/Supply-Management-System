@@ -19,13 +19,17 @@ export default function LoginPage() {
     const raw = username.trim().toLowerCase()
     const email = raw.includes('@') ? raw : `${raw}@supplysystem.com`
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('اسم المستخدم أو كلمة المرور غير صحيحة')
+      console.error('Login error:', error.message, 'email used:', email)
+      setError(`اسم المستخدم أو كلمة المرور غير صحيحة (${error.message})`)
       setLoading(false)
-    } else {
+    } else if (data.session) {
       router.push('/dashboard')
+    } else {
+      setError('لا يوجد جلسة — تواصل مع المسؤول')
+      setLoading(false)
     }
   }
 
