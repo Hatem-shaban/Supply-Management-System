@@ -52,41 +52,60 @@ export default function CubicRecordsPage() {
     setSubmitError('')
     setSubmitting(true)
     try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      if (!supabaseUrl || !supabaseKey) {
+        setSubmitError('إعدادات الاتصال غير موجودة (SUPABASE_URL/KEY)')
+        setSubmitting(false)
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const accessToken = session?.access_token
+
+      if (!accessToken) {
         setSubmitError('انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.')
         setSubmitting(false)
         return
       }
 
-      const insertPayload = {
-        company_name: form.company_name,
-        vehicle_number: form.vehicle_number,
-        cubic_capacity: parseFloat(form.cubic_capacity) || 0,
-        location: form.location,
-        company_price: parseFloat(form.company_price) || 0,
-      }
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10000)
 
-      const insertPromise = supabase.from('cubic_records').insert(insertPayload).select()
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
-      )
+      const res = await fetch(`${supabaseUrl}/rest/v1/cubic_records`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify({
+          company_name: form.company_name,
+          vehicle_number: form.vehicle_number,
+          cubic_capacity: parseFloat(form.cubic_capacity) || 0,
+          location: form.location,
+          company_price: parseFloat(form.company_price) || 0,
+        }),
+        signal: controller.signal,
+      })
 
-      const { data, error } = await Promise.race([insertPromise, timeoutPromise])
+      clearTimeout(timeout)
 
-      if (error) {
-        setSubmitError(error.message)
+      if (!res.ok) {
+        const errBody = await res.text()
+        setSubmitError(`خطأ ${res.status}: ${errBody}`)
       } else {
         setShowModal(false)
         setForm(emptyForm)
         fetchData()
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      if (msg === 'TIMEOUT') {
-        setSubmitError('انتهت مهلة الاتصال (10 ثوانٍ). تحقق من اتصال الإنترنت أو من إعدادات Supabase.')
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setSubmitError('انتهت مهلة الاتصال (10 ثوانٍ). تحقق من اتصال الإنترنت.')
       } else {
-        setSubmitError(msg)
+        setSubmitError(err instanceof Error ? err.message : String(err))
       }
     } finally {
       setSubmitting(false)
