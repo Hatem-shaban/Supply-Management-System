@@ -57,8 +57,8 @@ export default function VouchersPage() {
     const fetchLookups = async () => {
       const { data: cr } = await supabase.from('cubic_records').select('company_name, vehicle_number')
       if (cr) {
-        setCompanies([...new Set(cr.map(r => r.company_name))])
-        setVehicles([...new Set(cr.map(r => r.vehicle_number))])
+        setCompanies([...new Set(cr.map(r => r.company_name?.trim()).filter(Boolean))])
+        setVehicles([...new Set(cr.map(r => r.vehicle_number?.trim()).filter(Boolean))])
       }
     }
     fetchLookups()
