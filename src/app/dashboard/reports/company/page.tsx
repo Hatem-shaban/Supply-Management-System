@@ -19,6 +19,7 @@ export default function CompanyStatementPage() {
   const router = useRouter()
   const [rows, setRows] = useState<CompanyRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedCompany, setSelectedCompany] = useState('')
 
   useEffect(() => {
     if (role !== 'admin') router.push('/dashboard')
@@ -82,9 +83,25 @@ export default function CompanyStatementPage() {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
   }
 
+  const filteredRows = selectedCompany ? rows.filter(r => r.company_name === selectedCompany) : rows
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">كشف حساب شركات</h1>
+
+      <div className="mb-4">
+        <select
+          value={selectedCompany}
+          onChange={e => setSelectedCompany(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          dir="rtl"
+        >
+          <option value="">كل الشركات</option>
+          {rows.map(r => (
+            <option key={r.company_name} value={r.company_name}>{r.company_name}</option>
+          ))}
+        </select>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -97,7 +114,7 @@ export default function CompanyStatementPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(row => (
+              {filteredRows.map(row => (
                 <tr key={row.company_name} className="border-b hover:bg-gray-50 transition">
                   <td className="px-4 py-3 whitespace-nowrap font-medium">{row.company_name}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{row.payments.toFixed(2)}</td>
@@ -109,19 +126,19 @@ export default function CompanyStatementPage() {
                   <td className="px-4 py-3 whitespace-nowrap">{row.quantity.toFixed(2)}</td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {filteredRows.length === 0 && (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">لا توجد بيانات</td></tr>
               )}
             </tbody>
-            {rows.length > 0 && (
+            {filteredRows.length > 0 && (
               <tfoot>
                 <tr className="bg-gray-50 font-bold">
                   <td className="px-4 py-3">الإجمالي</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.payments, 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.dues, 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.remaining, 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.trip_count, 0)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.quantity, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.payments, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.dues, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.remaining, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.trip_count, 0)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.quantity, 0).toFixed(2)}</td>
                 </tr>
               </tfoot>
             )}

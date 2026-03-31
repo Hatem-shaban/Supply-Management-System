@@ -19,6 +19,7 @@ export default function QuarryStatementPage() {
   const router = useRouter()
   const [rows, setRows] = useState<QuarryRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedQuarry, setSelectedQuarry] = useState('')
 
   useEffect(() => {
     if (role !== 'admin') router.push('/dashboard')
@@ -86,9 +87,25 @@ export default function QuarryStatementPage() {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
   }
 
+  const filteredRows = selectedQuarry ? rows.filter(r => r.quarry_name === selectedQuarry) : rows
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">كشف حساب المحاجر</h1>
+
+      <div className="mb-4">
+        <select
+          value={selectedQuarry}
+          onChange={e => setSelectedQuarry(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          dir="rtl"
+        >
+          <option value="">كل المحاجر</option>
+          {rows.map(r => (
+            <option key={r.quarry_name} value={r.quarry_name}>{r.quarry_name}</option>
+          ))}
+        </select>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -101,7 +118,7 @@ export default function QuarryStatementPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(row => (
+              {filteredRows.map(row => (
                 <tr key={row.quarry_name} className="border-b hover:bg-gray-50 transition">
                   <td className="px-4 py-3 whitespace-nowrap font-medium">{row.quarry_name}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{row.trip_count}</td>
@@ -113,19 +130,19 @@ export default function QuarryStatementPage() {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {filteredRows.length === 0 && (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">لا توجد بيانات</td></tr>
               )}
             </tbody>
-            {rows.length > 0 && (
+            {filteredRows.length > 0 && (
               <tfoot>
                 <tr className="bg-gray-50 font-bold">
                   <td className="px-4 py-3">الإجمالي</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.trip_count, 0)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.quantity, 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.payments, 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.dues, 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">{rows.reduce((s, r) => s + r.remaining, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.trip_count, 0)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.quantity, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.payments, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.dues, 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">{filteredRows.reduce((s, r) => s + r.remaining, 0).toFixed(2)}</td>
                 </tr>
               </tfoot>
             )}

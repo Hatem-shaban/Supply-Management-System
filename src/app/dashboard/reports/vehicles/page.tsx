@@ -17,6 +17,7 @@ export default function VehicleStatementPage() {
   const router = useRouter()
   const [rows, setRows] = useState<DriverRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedDriver, setSelectedDriver] = useState('')
 
   useEffect(() => {
     if (role !== 'admin') router.push('/dashboard')
@@ -69,9 +70,25 @@ export default function VehicleStatementPage() {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
   }
 
+  const filteredRows = selectedDriver ? rows.filter(r => r.driver_name === selectedDriver) : rows
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">كشف حساب العربيات</h1>
+
+      <div className="mb-4">
+        <select
+          value={selectedDriver}
+          onChange={e => setSelectedDriver(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          dir="rtl"
+        >
+          <option value="">كل السائقين</option>
+          {rows.map(r => (
+            <option key={r.driver_name} value={r.driver_name}>{r.driver_name}</option>
+          ))}
+        </select>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -84,7 +101,7 @@ export default function VehicleStatementPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(row => (
+              {filteredRows.map(row => (
                 <tr key={row.driver_name} className="border-b hover:bg-gray-50 transition">
                   <td className="px-4 py-3 whitespace-nowrap font-medium">{row.driver_name}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{row.payments.toFixed(2)}</td>
@@ -94,7 +111,7 @@ export default function VehicleStatementPage() {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {filteredRows.length === 0 && (
                 <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">لا توجد بيانات</td></tr>
               )}
             </tbody>
