@@ -72,11 +72,10 @@ export default function VouchersPage() {
         const { data } = await supabase
           .from('cubic_records')
           .select('cubic_capacity')
-          .eq('vehicle_number', form.tractor_number)
+          .eq('vehicle_number', form.tractor_number.trim())
           .limit(1)
-          .maybeSingle()
-        if (data) {
-          setForm(prev => ({ ...prev, cubic_capacity: String(data.cubic_capacity) }))
+        if (data && data.length > 0) {
+          setForm(prev => ({ ...prev, cubic_capacity: String(data[0].cubic_capacity) }))
         } else {
           setForm(prev => ({ ...prev, cubic_capacity: '' }))
         }
