@@ -10,6 +10,7 @@ type AuthContextType = {
   loading: boolean
   accessToken: string
   signOut: () => Promise<void>
+  refreshToken: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   accessToken: '',
   signOut: async () => {},
+  refreshToken: async () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -26,18 +28,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [accessToken, setAccessToken] = useState('')
 
+  // Fetch user role from database
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', userId)
+        .single()
+      if (data) setRole(data.role)
+    } catch (error) {
+      console.error('Failed to fetch user role:', error)
+    }
+  }
+
+  // Refresh token proactively
+  const refreshToken = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (error) {
+        console.warn('Token refresh failed:', error.message)
+        return
+      }
+      if (data.session?.access_token) {
+        setAccessToken(data.session.access_token)
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error)
+    }
+  }
+
+  // Set up auth state listener
   useEffect(() => {
-    // onAuthStateChange fires immediately with the current session — use it as the source of truth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user)
         setAccessToken(session.access_token)
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-        if (data) setRole(data.role)
+        await fetchUserRole(session.user.id)
       } else {
         setUser(null)
         setRole('user')
@@ -49,11 +76,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Set up token refresh interval (refresh every 50 minutes to prevent expiration)
+  // Supabase tokens typically expire after 1 hour, so refresh before expiration
+  useEffect(() => {
+    if (!user) return
+
+    const refreshInterval = setInterval(() => {
+      refreshToken()
+    }, 50 * 60 * 1000) // 50 minutes
+
+    return () => clearInterval(refreshInterval)
+  }, [user])
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
     } catch (error) {
-      // Even if signOut fails, clear local state
       console.error('Sign out error:', error)
     }
     setUser(null)
@@ -66,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, accessToken, signOut }}>
+    <AuthContext.Provider value={{ user, role, loading, accessToken, signOut, refreshToken }}>
       {children}
     </AuthContext.Provider>
   )

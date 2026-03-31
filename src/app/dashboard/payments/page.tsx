@@ -19,51 +19,118 @@ const tabs = [
   { key: 'quarry', label: 'المحاجر', nameLabel: 'اسم المحجر' },
 ]
 
+const FETCH_TIMEOUT = 15000 // 15 seconds timeout
+
 export default function PaymentsPage() {
-  const { role } = useAuth()
+  const { role, refreshToken } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('driver')
   const [data, setData] = useState<Payment[]>([])
   const [showModal, setShowModal] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', date: new Date().toISOString().split('T')[0], amount: '' })
 
   useEffect(() => {
     if (role !== 'admin') router.push('/dashboard')
   }, [role, router])
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    const { data } = await supabase
-      .from('payments')
-      .select('*')
-      .eq('payment_type', activeTab)
-      .order('created_at', { ascending: false })
-    if (data) setData(data)
+  const handleSessionError = () => {
     setLoading(false)
-  }, [activeTab])
+    setError('انتهت جلستك - يرجى تسجيل الدخول مجددًا')
+    setTimeout(() => router.push('/'), 2000)
+  }
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError('')
+      
+      // Refresh token before fetching to prevent expiration
+      await refreshToken()
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+
+      const { data: payments, error: fetchError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('payment_type', activeTab)
+        .order('created_at', { ascending: false })
+
+      clearTimeout(timeout)
+
+      if (fetchError) {
+        console.error('Fetch error:', fetchError)
+        if (fetchError.code === 'PGRST116' || fetchError.message?.includes('401')) {
+          handleSessionError()
+          return
+        }
+        setError('فشل تحميل البيانات')
+      } else if (payments) {
+        setData(payments)
+      }
+    } catch (err) {
+      console.error('Fetch exception:', err)
+      if ((err as Error).name === 'AbortError') {
+        setError('انقطع الاتصال - يرجى المحاولة مجددًا')
+      } else {
+        setError('حدث خطأ في تحميل البيانات')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [activeTab, router, refreshToken])
 
   useEffect(() => { fetchData() }, [fetchData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const { error } = await supabase.from('payments').insert({
-      payment_type: activeTab,
-      name: form.name,
-      date: form.date,
-      amount: parseFloat(form.amount) || 0,
-    })
-    if (!error) {
-      setShowModal(false)
-      setForm({ name: '', date: new Date().toISOString().split('T')[0], amount: '' })
-      fetchData()
+    try {
+      await refreshToken()
+      const { error } = await supabase.from('payments').insert({
+        payment_type: activeTab,
+        name: form.name,
+        date: form.date,
+        amount: parseFloat(form.amount) || 0,
+      })
+      if (error) {
+        console.error('Insert error:', error)
+        if (error.code === 'PGRST116' || error.message?.includes('401')) {
+          handleSessionError()
+          return
+        }
+        setError('فشل إضافة الدفعة')
+      } else {
+        setShowModal(false)
+        setForm({ name: '', date: new Date().toISOString().split('T')[0], amount: '' })
+        fetchData()
+      }
+    } catch (err) {
+      console.error('Submit error:', err)
+      setError('فشل حفظ البيانات')
     }
   }
 
   const handleDelete = async (id: number) => {
     if (!confirm('هل أنت متأكد من الحذف؟')) return
-    await supabase.from('payments').delete().eq('id', id)
-    fetchData()
+    try {
+      await refreshToken()
+      const { error } = await supabase.from('payments').delete().eq('id', id)
+      if (error) {
+        console.error('Delete error:', error)
+        if (error.code === 'PGRST116' || error.message?.includes('401')) {
+          handleSessionError()
+          return
+        }
+        setError('فشل حذف الدفعة')
+      } else {
+        fetchData()
+      }
+    } catch (err) {
+      console.error('Delete exception:', err)
+      setError('فشل حذف الدفعة')
+    }
   }
 
   const currentTab = tabs.find(t => t.key === activeTab)!
@@ -74,18 +141,25 @@ export default function PaymentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">سجل الدفعات</h1>
-        <button onClick={() => setShowModal(true)}
+        <button onClick={() => { setShowModal(true); setError('') }}
           className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
           + إضافة
         </button>
       </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit">
         {tabs.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); setError('') }}
             className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${
               activeTab === tab.key
                 ? 'bg-white text-blue-600 shadow-sm'

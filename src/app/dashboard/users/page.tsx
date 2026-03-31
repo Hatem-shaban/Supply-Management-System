@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import { fetchWithAuth } from '@/lib/api'
 
 type UserRow = {
   id: string
@@ -29,61 +29,98 @@ export default function UsersPage() {
     if (role !== 'admin') router.push('/dashboard')
   }, [role, router])
 
-  const getToken = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    return session?.access_token || ''
+  const handleAuthError = () => {
+    setLoading(false)
+    router.push('/')
   }
 
   const fetchUsers = useCallback(async () => {
-    const token = await getToken()
-    const res = await fetch('/api/admin/users', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    const data = await res.json()
+    try {
+      setLoading(true)
+      const res = await fetchWithAuth('/api/admin/users', {}, handleAuthError)
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          handleAuthError()
+          return
+        }
+        throw new Error(`HTTP ${res.status}`)
+      }
 
-    if (data.error === 'SERVICE_ROLE_KEY_MISSING') {
-      setServiceKeyMissing(true)
-    } else if (Array.isArray(data)) {
-      setUsers(data)
-      setServiceKeyMissing(false)
+      const data = await res.json()
+
+      if (data.error === 'SERVICE_ROLE_KEY_MISSING') {
+        setServiceKeyMissing(true)
+      } else if (Array.isArray(data)) {
+        setUsers(data)
+        setServiceKeyMissing(false)
+      } else if (data.error) {
+        setApiError(data.error)
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
+      if (!(error instanceof Error && error.message === 'SESSION_EXPIRED')) {
+        setApiError('فشل تحميل المستخدمين')
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
-  }, [])
+  }, [router])
 
   useEffect(() => { fetchUsers() }, [fetchUsers])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     setApiError('')
-    const token = await getToken()
-    const res = await fetch('/api/admin/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(form),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      setApiError(data.error || 'حدث خطأ')
-    } else {
-      setShowModal(false)
-      setForm(emptyForm)
-      fetchUsers()
+    try {
+      const res = await fetchWithAuth('/api/admin/users', {
+        method: 'POST',
+        body: JSON.stringify(form),
+      }, handleAuthError)
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          handleAuthError()
+          return
+        }
+        const data = await res.json()
+        setApiError(data.error || 'حدث خطأ')
+      } else {
+        setShowModal(false)
+        setForm(emptyForm)
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error('Create user error:', error)
+      if (!(error instanceof Error && error.message === 'SESSION_EXPIRED')) {
+        setApiError('فشل إنشاء المستخدم')
+      }
     }
   }
 
   const handleDelete = async (userId: string, username: string) => {
     if (!confirm(`هل أنت متأكد من حذف المستخدم "${username}"؟`)) return
-    const token = await getToken()
-    const res = await fetch('/api/admin/users', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ userId }),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      alert(data.error || 'حدث خطأ')
-    } else {
-      fetchUsers()
+    try {
+      const res = await fetchWithAuth('/api/admin/users', {
+        method: 'DELETE',
+        body: JSON.stringify({ userId }),
+      }, handleAuthError)
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          handleAuthError()
+          return
+        }
+        const data = await res.json()
+        alert(data.error || 'حدث خطأ')
+      } else {
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error('Delete user error:', error)
+      if (!(error instanceof Error && error.message === 'SESSION_EXPIRED')) {
+        alert('فشل حذف المستخدم')
+      }
     }
   }
 
