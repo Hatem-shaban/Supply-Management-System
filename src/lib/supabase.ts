@@ -10,8 +10,4 @@ export const supabase = createClient(supabaseUrl || 'https://placeholder.supabas
     detectSessionInUrl: true,
     flowType: 'pkce',
   },
-  // Improve realtime connection
-  realtime: {
-    broadcast: { self: true },
-  },
 })
