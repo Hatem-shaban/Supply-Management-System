@@ -45,7 +45,7 @@ export default function Sidebar() {
         <div className="mobile-logo-section flex items-center gap-3">
           <div className="animated-loader-container" style={{ width: '50px', height: '50px' }}>
             <img
-              src="/icons/animated-loader.svg"
+              src="/icons/network_core_animated.svg"
               alt="Loading"
               className="animated-loader-icon"
             />
@@ -86,7 +86,7 @@ export default function Sidebar() {
         <div className="logo-section hidden lg:flex items-center gap-4 p-5 border-b border-slate-700">
           <div className="animated-loader-container flex-shrink-0" style={{ width: '60px', height: '60px' }}>
             <img
-              src="/icons/animated-loader.svg"
+              src="/icons/network_core_animated.svg"
               alt="Loading"
               className="animated-loader-icon"
             />
