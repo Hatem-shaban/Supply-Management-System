@@ -201,18 +201,18 @@ export default function VouchersPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">اسم السائق</label>
+                <input type="text" value={form.driver_name} onChange={e => updateField('driver_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجرار</label>
                 <input type="text" value={form.tractor_number} onChange={e => updateField('tractor_number', e.target.value)}
                   list="vehicles" className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
                 <datalist id="vehicles">
                   {vehicles.map(v => <option key={v} value={v} />)}
                 </datalist>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">اسم السائق</label>
-                <input type="text" value={form.driver_name} onChange={e => updateField('driver_name', e.target.value)}
-                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
               </div>
 
               <div>
