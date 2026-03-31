@@ -40,7 +40,7 @@ export default function VouchersPage() {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
   const [companies, setCompanies] = useState<string[]>([])
-  const [vehicles, setVehicles] = useState<string[]>([])
+  const [contractors, setContractors] = useState<Array<{driver_name: string, tractor_number: string}>>([])  
 
   const fetchData = useCallback(async () => {
     const { data } = await supabase
@@ -58,8 +58,9 @@ export default function VouchersPage() {
       const { data: cr } = await supabase.from('cubic_records').select('company_name, vehicle_number')
       if (cr) {
         setCompanies([...new Set(cr.map(r => r.company_name?.trim()).filter(Boolean))])
-        setVehicles([...new Set(cr.map(r => r.vehicle_number?.trim()).filter(Boolean))])
       }
+      const { data: tc } = await supabase.from('transport_contractors').select('driver_name, tractor_number').order('driver_name')
+      if (tc) setContractors(tc)
     }
     fetchLookups()
   }, [fetchData])
@@ -112,12 +113,21 @@ export default function VouchersPage() {
   }
 
   const updateField = (field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }))
+    if (field === 'driver_name') {
+      setForm(prev => ({ ...prev, driver_name: value, tractor_number: '' }))
+    } else {
+      setForm(prev => ({ ...prev, [field]: value }))
+    }
   }
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
   }
+
+  const drivers = [...new Set(contractors.map(c => c.driver_name))]
+  const filteredTractors = contractors
+    .filter(c => c.driver_name === form.driver_name)
+    .map(c => c.tractor_number)
 
   return (
     <div>
@@ -202,17 +212,21 @@ export default function VouchersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">اسم السائق</label>
-                <input type="text" value={form.driver_name} onChange={e => updateField('driver_name', e.target.value)}
-                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+                <select value={form.driver_name} onChange={e => updateField('driver_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                  <option value="">اختر السائق</option>
+                  {drivers.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجرار</label>
-                <input type="text" value={form.tractor_number} onChange={e => updateField('tractor_number', e.target.value)}
-                  list="vehicles" className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
-                <datalist id="vehicles">
-                  {vehicles.map(v => <option key={v} value={v} />)}
-                </datalist>
+                <select value={form.tractor_number} onChange={e => updateField('tractor_number', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required
+                  disabled={!form.driver_name}>
+                  <option value="">اختر رقم الجرار</option>
+                  {filteredTractors.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
 
               <div>

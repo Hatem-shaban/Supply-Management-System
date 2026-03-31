@@ -67,6 +67,14 @@ CREATE TABLE expenses (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- مقاولين النقل (Transport Contractors)
+CREATE TABLE transport_contractors (
+  id BIGSERIAL PRIMARY KEY,
+  driver_name TEXT NOT NULL,
+  tractor_number TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ============================================
 -- Enable Row Level Security
 -- ============================================
@@ -76,6 +84,7 @@ ALTER TABLE vouchers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quarry_pricing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transport_contractors ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- RLS Policies - Read access for authenticated
@@ -86,6 +95,7 @@ CREATE POLICY "auth_read" ON vouchers FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth_read" ON payments FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth_read" ON quarry_pricing FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth_read" ON expenses FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_read" ON transport_contractors FOR SELECT TO authenticated USING (true);
 
 -- ============================================
 -- RLS Policies - Insert for authenticated
@@ -95,6 +105,7 @@ CREATE POLICY "auth_insert" ON vouchers FOR INSERT TO authenticated WITH CHECK (
 CREATE POLICY "auth_insert" ON payments FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "auth_insert" ON quarry_pricing FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "auth_insert" ON expenses FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "auth_insert" ON transport_contractors FOR INSERT TO authenticated WITH CHECK (true);
 
 -- ============================================
 -- RLS Policies - Delete for authenticated
@@ -104,6 +115,7 @@ CREATE POLICY "auth_delete" ON vouchers FOR DELETE TO authenticated USING (true)
 CREATE POLICY "auth_delete" ON payments FOR DELETE TO authenticated USING (true);
 CREATE POLICY "auth_delete" ON quarry_pricing FOR DELETE TO authenticated USING (true);
 CREATE POLICY "auth_delete" ON expenses FOR DELETE TO authenticated USING (true);
+CREATE POLICY "auth_delete" ON transport_contractors FOR DELETE TO authenticated USING (true);
 
 -- ============================================
 -- Auto-create user profile on signup

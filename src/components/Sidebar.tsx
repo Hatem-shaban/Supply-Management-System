@@ -9,6 +9,7 @@ const menuItems = [
   { label: 'الرئيسية', path: '/dashboard', adminOnly: false, icon: '01-dashboard' },
   { label: 'بونات', path: '/dashboard/vouchers', adminOnly: false, icon: '02-vouchers' },
   { label: 'محضر التكعيب شركات', path: '/dashboard/cubic-records', adminOnly: true, icon: '03-cubic-records' },
+  { label: 'مقاولين النقل', path: '/dashboard/transport-contractors', adminOnly: true, icon: '03-cubic-records' },
   { label: 'سجل الدفعات', path: '/dashboard/payments', adminOnly: true, icon: '04-payments' },
   { label: 'تسعيرة المحاجر', path: '/dashboard/quarry-pricing', adminOnly: true, icon: '05-pricing' },
   { label: 'مصروفات', path: '/dashboard/expenses', adminOnly: true, icon: '06-expenses' },
