@@ -26,6 +26,7 @@ type CubicRecord = {
 
 const emptyForm = {
   company_name: '',
+  driver_name: '',
   vehicle_number: '',
   cubic_capacity: '',
   location: '',
@@ -41,6 +42,7 @@ export default function CubicRecordsPage() {
   const [form, setForm] = useState(emptyForm)
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [contractors, setContractors] = useState<Array<{driver_name: string, tractor_number: string}>>([])  
 
   useEffect(() => {
     if (role !== 'admin') router.push('/dashboard')
@@ -70,7 +72,18 @@ export default function CubicRecordsPage() {
     }
   }, [accessToken])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    fetchData()
+    const fetchContractors = async () => {
+      if (!accessToken) return
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/transport_contractors?select=driver_name,tractor_number&order=driver_name.asc`,
+        { headers: dbHeaders(accessToken) }
+      )
+      if (res.ok) setContractors(await res.json())
+    }
+    fetchContractors()
+  }, [fetchData, accessToken])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -135,8 +148,17 @@ export default function CubicRecordsPage() {
   }
 
   const updateField = (field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }))
+    if (field === 'driver_name') {
+      setForm(prev => ({ ...prev, driver_name: value, vehicle_number: '' }))
+    } else {
+      setForm(prev => ({ ...prev, [field]: value }))
+    }
   }
+
+  const drivers = [...new Set(contractors.map(c => c.driver_name))]
+  const filteredTractors = contractors
+    .filter(c => c.driver_name === form.driver_name)
+    .map(c => c.tractor_number)
 
   if (role !== 'admin') return null
 
@@ -205,9 +227,22 @@ export default function CubicRecordsPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">اسم السائق</label>
+                <select value={form.driver_name} onChange={e => updateField('driver_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                  <option value="">اختر السائق</option>
+                  {drivers.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">رقم العربية</label>
-                <input type="text" value={form.vehicle_number} onChange={e => updateField('vehicle_number', e.target.value)}
-                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+                <select value={form.vehicle_number} onChange={e => updateField('vehicle_number', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required
+                  disabled={!form.driver_name}>
+                  <option value="">اختر رقم العربية</option>
+                  {filteredTractors.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
 
               <div>
