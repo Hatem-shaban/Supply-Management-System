@@ -42,7 +42,14 @@ export default function Sidebar() {
     <>
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 right-0 left-0 bg-slate-800 text-white p-4 flex items-center justify-between z-50 shadow-lg">
-        <h1 className="text-lg font-bold">إدارة التوريدات</h1>
+        <div className="flex items-center gap-2">
+          <img
+            src="/icons/animated-loader.svg"
+            alt="Loading"
+            className="w-6 h-6 flex-shrink-0"
+          />
+          <h1 className="text-lg font-bold">إدارة التوريدات</h1>
+        </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-700 transition"
@@ -75,11 +82,11 @@ export default function Sidebar() {
       >
         {/* Logo */}
         <div className="hidden lg:flex items-center gap-3 p-5 border-b border-slate-700">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          </div>
+          <img
+            src="/icons/animated-loader.svg"
+            alt="Loading"
+            className="w-10 h-10 flex-shrink-0"
+          />
           <h1 className="text-lg font-bold">إدارة التوريدات</h1>
         </div>
 
