@@ -19,10 +19,8 @@ const tabs = [
   { key: 'quarry', label: 'المحاجر', nameLabel: 'اسم المحجر' },
 ]
 
-const FETCH_TIMEOUT = 15000 // 15 seconds timeout
-
 export default function PaymentsPage() {
-  const { role, refreshToken } = useAuth()
+  const { role } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('driver')
   const [data, setData] = useState<Payment[]>([])
@@ -46,19 +44,11 @@ export default function PaymentsPage() {
       setLoading(true)
       setError('')
       
-      // Refresh token before fetching to prevent expiration
-      await refreshToken()
-
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-
       const { data: payments, error: fetchError } = await supabase
         .from('payments')
         .select('*')
         .eq('payment_type', activeTab)
         .order('created_at', { ascending: false })
-
-      clearTimeout(timeout)
 
       if (fetchError) {
         console.error('Fetch error:', fetchError)
@@ -72,22 +62,17 @@ export default function PaymentsPage() {
       }
     } catch (err) {
       console.error('Fetch exception:', err)
-      if ((err as Error).name === 'AbortError') {
-        setError('انقطع الاتصال - يرجى المحاولة مجددًا')
-      } else {
-        setError('حدث خطأ في تحميل البيانات')
-      }
+      setError('حدث خطأ في تحميل البيانات')
     } finally {
       setLoading(false)
     }
-  }, [activeTab, router, refreshToken])
+  }, [activeTab, router])
 
   useEffect(() => { fetchData() }, [fetchData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await refreshToken()
       const { error } = await supabase.from('payments').insert({
         payment_type: activeTab,
         name: form.name,
@@ -115,7 +100,6 @@ export default function PaymentsPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('هل أنت متأكد من الحذف؟')) return
     try {
-      await refreshToken()
       const { error } = await supabase.from('payments').delete().eq('id', id)
       if (error) {
         console.error('Delete error:', error)
