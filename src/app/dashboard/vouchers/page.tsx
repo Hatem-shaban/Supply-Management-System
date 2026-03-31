@@ -65,24 +65,27 @@ export default function VouchersPage() {
     fetchLookups()
   }, [fetchData])
 
-  // Auto-fill cubic capacity from cubic records
+  // Auto-fill cubic capacity from cubic records based on tractor_number = vehicle_number
   useEffect(() => {
     const lookup = async () => {
-      if (form.company_name && form.tractor_number) {
+      if (form.tractor_number) {
         const { data } = await supabase
           .from('cubic_records')
           .select('cubic_capacity')
-          .eq('company_name', form.company_name)
           .eq('vehicle_number', form.tractor_number)
           .limit(1)
           .maybeSingle()
         if (data) {
           setForm(prev => ({ ...prev, cubic_capacity: String(data.cubic_capacity) }))
+        } else {
+          setForm(prev => ({ ...prev, cubic_capacity: '' }))
         }
+      } else {
+        setForm(prev => ({ ...prev, cubic_capacity: '' }))
       }
     }
     lookup()
-  }, [form.company_name, form.tractor_number])
+  }, [form.tractor_number])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
