@@ -1,9 +1,19 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+function dbHeaders(token: string) {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${token}`,
+  }
+}
 
 type CubicRecord = {
   id: number
@@ -23,7 +33,7 @@ const emptyForm = {
 }
 
 export default function CubicRecordsPage() {
-  const { role } = useAuth()
+  const { role, accessToken } = useAuth()
   const router = useRouter()
   const [data, setData] = useState<CubicRecord[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -36,32 +46,29 @@ export default function CubicRecordsPage() {
     if (role !== 'admin') router.push('/dashboard')
   }, [role, router])
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (token?: string) => {
+    const authToken = token || accessToken
+    if (!authToken) { setLoading(false); return }
     try {
-      const queryPromise = supabase
-        .from('cubic_records')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('FETCH_TIMEOUT')), 8000)
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 8000)
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/cubic_records?select=*&order=created_at.desc`,
+        { headers: dbHeaders(authToken), signal: controller.signal }
       )
-      
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise])
-      
-      if (error) {
-        console.error('Fetch error:', error)
+      clearTimeout(timer)
+      if (res.ok) {
+        const rows = await res.json()
+        setData(rows)
+      } else {
         setData([])
-      } else if (data) {
-        setData(data)
       }
-    } catch (err) {
-      console.error('Fetch failed:', err)
+    } catch {
       setData([])
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [accessToken])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -69,53 +76,61 @@ export default function CubicRecordsPage() {
     e.preventDefault()
     setSubmitError('')
     setSubmitting(true)
+    if (!accessToken) {
+      setSubmitError('انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.')
+      setSubmitting(false)
+      return
+    }
     try {
-      const insertPromise = supabase.from('cubic_records').insert({
-        company_name: form.company_name,
-        vehicle_number: form.vehicle_number,
-        cubic_capacity: parseFloat(form.cubic_capacity) || 0,
-        location: form.location,
-        company_price: parseFloat(form.company_price) || 0,
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 8000)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/cubic_records`, {
+        method: 'POST',
+        headers: dbHeaders(accessToken),
+        body: JSON.stringify({
+          company_name: form.company_name,
+          vehicle_number: form.vehicle_number,
+          cubic_capacity: parseFloat(form.cubic_capacity) || 0,
+          location: form.location,
+          company_price: parseFloat(form.company_price) || 0,
+        }),
+        signal: controller.signal,
       })
-      
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('INSERT_TIMEOUT')), 8000)
-      )
-      
-      const { error } = await Promise.race([insertPromise, timeoutPromise])
-      
-      if (error) {
-        setSubmitError(error.message)
-        setSubmitting(false)
+      clearTimeout(timer)
+      if (!res.ok) {
+        const body = await res.text()
+        setSubmitError(`خطأ ${res.status}: ${body}`)
       } else {
         setShowModal(false)
         setForm(emptyForm)
-        setSubmitting(false)
-        // Fetch after brief delay to avoid race condition
-        setTimeout(() => {
-          fetchData()
-        }, 500)
+        fetchData()
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع'
-      setSubmitError(msg === 'INSERT_TIMEOUT' ? 'انتهت مهلة الاتصال. حاول لاحقاً.' : msg)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setSubmitError('انتهت مهلة الاتصال. حاول لاحقاً.')
+      } else {
+        setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+      }
+    } finally {
       setSubmitting(false)
     }
   }
 
   const handleDelete = async (id: number) => {
     if (!confirm('هل أنت متأكد من الحذف؟')) return
+    if (!accessToken) return
     try {
-      const deletePromise = supabase.from('cubic_records').delete().eq('id', id)
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('DELETE_TIMEOUT')), 8000)
-      )
-      await Promise.race([deletePromise, timeoutPromise])
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 8000)
+      await fetch(`${SUPABASE_URL}/rest/v1/cubic_records?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: dbHeaders(accessToken),
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
       fetchData()
-    } catch (err) {
-      alert(err instanceof Error && err.message === 'DELETE_TIMEOUT' 
-        ? 'انتهت مهلة الحذف. حاول لاحقاً.' 
-        : 'خطأ في الحذف')
+    } catch {
+      alert('خطأ في الحذف')
     }
   }
 
