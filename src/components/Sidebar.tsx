@@ -6,20 +6,20 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 
 const menuItems = [
-  { label: 'الرئيسية', path: '/dashboard', adminOnly: false },
-  { label: 'بونات', path: '/dashboard/vouchers', adminOnly: false },
-  { label: 'محضر التكعيب شركات', path: '/dashboard/cubic-records', adminOnly: true },
-  { label: 'سجل الدفعات', path: '/dashboard/payments', adminOnly: true },
-  { label: 'تسعيرة المحاجر', path: '/dashboard/quarry-pricing', adminOnly: true },
-  { label: 'مصروفات', path: '/dashboard/expenses', adminOnly: true },
-  { label: 'إدارة المستخدمين', path: '/dashboard/users', adminOnly: true },
+  { label: 'الرئيسية', path: '/dashboard', adminOnly: false, icon: '01-dashboard' },
+  { label: 'بونات', path: '/dashboard/vouchers', adminOnly: false, icon: '02-vouchers' },
+  { label: 'محضر التكعيب شركات', path: '/dashboard/cubic-records', adminOnly: true, icon: '03-cubic-records' },
+  { label: 'سجل الدفعات', path: '/dashboard/payments', adminOnly: true, icon: '04-payments' },
+  { label: 'تسعيرة المحاجر', path: '/dashboard/quarry-pricing', adminOnly: true, icon: '05-pricing' },
+  { label: 'مصروفات', path: '/dashboard/expenses', adminOnly: true, icon: '06-expenses' },
+  { label: 'إدارة المستخدمين', path: '/dashboard/users', adminOnly: true, icon: '07-users' },
 ]
 
 const reportItems = [
-  { label: 'كشف حساب شركات', path: '/dashboard/reports/company' },
-  { label: 'كشف حساب العربيات', path: '/dashboard/reports/vehicles' },
-  { label: 'كشف حساب المحاجر', path: '/dashboard/reports/quarries' },
-  { label: 'كشف حساب ختامي', path: '/dashboard/reports/final' },
+  { label: 'كشف حساب شركات', path: '/dashboard/reports/company', icon: '08-company-statement' },
+  { label: 'كشف حساب العربيات', path: '/dashboard/reports/vehicles', icon: '09-vehicle-statement' },
+  { label: 'كشف حساب المحاجر', path: '/dashboard/reports/quarries', icon: '10-quarry-statement' },
+  { label: 'كشف حساب ختامي', path: '/dashboard/reports/final', icon: '11-final-statement' },
 ]
 
 export default function Sidebar() {
@@ -27,6 +27,12 @@ export default function Sidebar() {
   const { role, signOut } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [reportsOpen, setReportsOpen] = useState(false)
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+
+  const getIconSrc = (iconName: string, isHovered: boolean) => {
+    const folder = isHovered ? 'hover' : 'standard'
+    return `/icons/${folder}/${iconName}.svg`
+  }
 
   const filteredItems = menuItems.filter(item => !item.adminOnly || role === 'admin')
 
@@ -84,13 +90,20 @@ export default function Sidebar() {
               key={item.path}
               href={item.path}
               onClick={() => setMobileOpen(false)}
+              onMouseEnter={() => setHoveredItem(item.path)}
+              onMouseLeave={() => setHoveredItem(null)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition text-sm ${
                 isActive(item.path)
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
                   : 'text-slate-300 hover:bg-slate-700/70'
               }`}
             >
-              {item.label}
+              <img
+                src={getIconSrc(item.icon, hoveredItem === item.path || isActive(item.path))}
+                alt={item.label}
+                className="w-6 h-6 flex-shrink-0"
+              />
+              <span>{item.label}</span>
             </Link>
           ))}
 
@@ -123,13 +136,20 @@ export default function Sidebar() {
                       key={item.path}
                       href={item.path}
                       onClick={() => setMobileOpen(false)}
-                      className={`block px-4 py-2.5 rounded-lg transition text-sm ${
+                      onMouseEnter={() => setHoveredItem(item.path)}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition text-sm ${
                         isActive(item.path)
                           ? 'bg-blue-600 text-white'
                           : 'text-slate-400 hover:bg-slate-700/70 hover:text-slate-200'
                       }`}
                     >
-                      {item.label}
+                      <img
+                        src={getIconSrc(item.icon, hoveredItem === item.path || isActive(item.path))}
+                        alt={item.label}
+                        className="w-5 h-5 flex-shrink-0"
+                      />
+                      <span>{item.label}</span>
                     </Link>
                   ))}
                 </div>
