@@ -193,11 +193,11 @@ export default function VouchersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">اسم الشركة</label>
-                <input type="text" value={form.company_name} onChange={e => updateField('company_name', e.target.value)}
-                  list="companies" className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
-                <datalist id="companies">
-                  {companies.map(c => <option key={c} value={c} />)}
-                </datalist>
+                <select value={form.company_name} onChange={e => updateField('company_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                  <option value="">اختر الشركة</option>
+                  {companies.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
 
               <div>
