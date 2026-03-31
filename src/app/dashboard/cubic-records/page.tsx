@@ -37,12 +37,30 @@ export default function CubicRecordsPage() {
   }, [role, router])
 
   const fetchData = useCallback(async () => {
-    const { data } = await supabase
-      .from('cubic_records')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setData(data)
-    setLoading(false)
+    try {
+      const queryPromise = supabase
+        .from('cubic_records')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('FETCH_TIMEOUT')), 8000)
+      )
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+      
+      if (error) {
+        console.error('Fetch error:', error)
+        setData([])
+      } else if (data) {
+        setData(data)
+      }
+    } catch (err) {
+      console.error('Fetch failed:', err)
+      setData([])
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
@@ -52,31 +70,53 @@ export default function CubicRecordsPage() {
     setSubmitError('')
     setSubmitting(true)
     try {
-      const { error } = await supabase.from('cubic_records').insert({
+      const insertPromise = supabase.from('cubic_records').insert({
         company_name: form.company_name,
         vehicle_number: form.vehicle_number,
         cubic_capacity: parseFloat(form.cubic_capacity) || 0,
         location: form.location,
         company_price: parseFloat(form.company_price) || 0,
       })
+      
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('INSERT_TIMEOUT')), 8000)
+      )
+      
+      const { error } = await Promise.race([insertPromise, timeoutPromise])
+      
       if (error) {
         setSubmitError(error.message)
+        setSubmitting(false)
       } else {
         setShowModal(false)
         setForm(emptyForm)
-        fetchData()
+        setSubmitting(false)
+        // Fetch after brief delay to avoid race condition
+        setTimeout(() => {
+          fetchData()
+        }, 500)
       }
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
-    } finally {
+      const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع'
+      setSubmitError(msg === 'INSERT_TIMEOUT' ? 'انتهت مهلة الاتصال. حاول لاحقاً.' : msg)
       setSubmitting(false)
     }
   }
 
   const handleDelete = async (id: number) => {
     if (!confirm('هل أنت متأكد من الحذف؟')) return
-    await supabase.from('cubic_records').delete().eq('id', id)
-    fetchData()
+    try {
+      const deletePromise = supabase.from('cubic_records').delete().eq('id', id)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('DELETE_TIMEOUT')), 8000)
+      )
+      await Promise.race([deletePromise, timeoutPromise])
+      fetchData()
+    } catch (err) {
+      alert(err instanceof Error && err.message === 'DELETE_TIMEOUT' 
+        ? 'انتهت مهلة الحذف. حاول لاحقاً.' 
+        : 'خطأ في الحذف')
+    }
   }
 
   const updateField = (field: string, value: string) => {
