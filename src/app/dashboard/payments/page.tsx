@@ -81,9 +81,9 @@ export default function PaymentsPage() {
         supabase.from('cubic_records').select('company_name').order('company_name'),
         supabase.from('quarry_pricing').select('quarry_name').order('quarry_name'),
       ])
-      if (drivers.data) setDriverOptions([...new Set(drivers.data.map((d: { driver_name: string }) => d.driver_name).filter(Boolean))])
-      if (companies.data) setCompanyOptions([...new Set(companies.data.map((c: { company_name: string }) => c.company_name).filter(Boolean))])
-      if (quarries.data) setQuarryOptions([...new Set(quarries.data.map((q: { quarry_name: string }) => q.quarry_name).filter(Boolean))])
+      if (drivers.data) setDriverOptions([...new Set(drivers.data.map((d: { driver_name: string }) => d.driver_name?.trim()).filter(Boolean))])
+      if (companies.data) setCompanyOptions([...new Set(companies.data.map((c: { company_name: string }) => c.company_name?.trim()).filter(Boolean))])
+      if (quarries.data) setQuarryOptions([...new Set(quarries.data.map((q: { quarry_name: string }) => q.quarry_name?.trim()).filter(Boolean))])
     }
     fetchOptions()
   }, [])
