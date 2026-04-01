@@ -7,11 +7,11 @@ import { useRouter } from 'next/navigation'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-function dbHeaders(token: string) {
+function dbHeaders() {
   return {
     'Content-Type': 'application/json',
     'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${token}`,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
   }
 }
 
@@ -34,7 +34,7 @@ const emptyForm = {
 }
 
 export default function CubicRecordsPage() {
-  const { role, accessToken } = useAuth()
+  const { role } = useAuth()
   const router = useRouter()
   const [data, setData] = useState<CubicRecord[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -49,15 +49,13 @@ export default function CubicRecordsPage() {
     if (role !== 'admin') router.push('/dashboard')
   }, [role, router])
 
-  const fetchData = useCallback(async (token?: string) => {
-    const authToken = token || accessToken
-    if (!authToken) { setLoading(false); return }
+  const fetchData = useCallback(async () => {
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 8000)
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/cubic_records?select=*&order=created_at.desc`,
-        { headers: dbHeaders(authToken), signal: controller.signal }
+        { headers: dbHeaders(), signal: controller.signal }
       )
       clearTimeout(timer)
       if (res.ok) {
@@ -71,36 +69,30 @@ export default function CubicRecordsPage() {
     } finally {
       setLoading(false)
     }
-  }, [accessToken])
+  }, [])
 
   useEffect(() => {
     fetchData()
     const fetchContractors = async () => {
-      if (!accessToken) return
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/transport_contractors?select=driver_name,tractor_number&order=driver_name.asc`,
-        { headers: dbHeaders(accessToken) }
+        { headers: dbHeaders() }
       )
       if (res.ok) setContractors(await res.json())
     }
     fetchContractors()
-  }, [fetchData, accessToken])
+  }, [fetchData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError('')
     setSubmitting(true)
-    if (!accessToken) {
-      setSubmitError('انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.')
-      setSubmitting(false)
-      return
-    }
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 8000)
       const res = await fetch(`${SUPABASE_URL}/rest/v1/cubic_records`, {
         method: 'POST',
-        headers: dbHeaders(accessToken),
+        headers: dbHeaders(),
         body: JSON.stringify({
           company_name: form.company_name,
           vehicle_number: form.vehicle_number,
@@ -131,7 +123,7 @@ export default function CubicRecordsPage() {
   }
 
   const handleDelete = async () => {
-    if (deleteId === null || !accessToken) return
+    if (deleteId === null) return
     const id = deleteId
     setDeleteId(null)
     try {
@@ -139,7 +131,7 @@ export default function CubicRecordsPage() {
       const timer = setTimeout(() => controller.abort(), 8000)
       await fetch(`${SUPABASE_URL}/rest/v1/cubic_records?id=eq.${id}`, {
         method: 'DELETE',
-        headers: dbHeaders(accessToken),
+        headers: dbHeaders(),
         signal: controller.signal,
       })
       clearTimeout(timer)

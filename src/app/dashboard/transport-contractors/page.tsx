@@ -7,11 +7,11 @@ import { useRouter } from 'next/navigation'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-function dbHeaders(token: string) {
+function dbHeaders() {
   return {
     'Content-Type': 'application/json',
     'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${token}`,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
   }
 }
 
@@ -27,7 +27,7 @@ const emptyForm = {
 }
 
 export default function TransportContractorsPage() {
-  const { role, accessToken } = useAuth()
+  const { role } = useAuth()
   const router = useRouter()
   const [data, setData] = useState<Contractor[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -41,15 +41,13 @@ export default function TransportContractorsPage() {
     if (role !== 'admin') router.push('/dashboard')
   }, [role, router])
 
-  const fetchData = useCallback(async (token?: string) => {
-    const authToken = token || accessToken
-    if (!authToken) { setLoading(false); return }
+  const fetchData = useCallback(async () => {
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 8000)
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/transport_contractors?select=*&order=driver_name.asc`,
-        { headers: dbHeaders(authToken), signal: controller.signal }
+        { headers: dbHeaders(), signal: controller.signal }
       )
       clearTimeout(timer)
       if (res.ok) {
@@ -63,7 +61,7 @@ export default function TransportContractorsPage() {
     } finally {
       setLoading(false)
     }
-  }, [accessToken])
+  }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -71,17 +69,12 @@ export default function TransportContractorsPage() {
     e.preventDefault()
     setSubmitError('')
     setSubmitting(true)
-    if (!accessToken) {
-      setSubmitError('انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.')
-      setSubmitting(false)
-      return
-    }
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 8000)
       const res = await fetch(`${SUPABASE_URL}/rest/v1/transport_contractors`, {
         method: 'POST',
-        headers: dbHeaders(accessToken),
+        headers: dbHeaders(),
         body: JSON.stringify({
           driver_name: form.driver_name.trim(),
           tractor_number: form.tractor_number.trim(),
@@ -109,7 +102,7 @@ export default function TransportContractorsPage() {
   }
 
   const handleDelete = async () => {
-    if (deleteId === null || !accessToken) return
+    if (deleteId === null) return
     const id = deleteId
     setDeleteId(null)
     try {
@@ -117,7 +110,7 @@ export default function TransportContractorsPage() {
       const timer = setTimeout(() => controller.abort(), 8000)
       await fetch(`${SUPABASE_URL}/rest/v1/transport_contractors?id=eq.${id}`, {
         method: 'DELETE',
-        headers: dbHeaders(accessToken),
+        headers: dbHeaders(),
         signal: controller.signal,
       })
       clearTimeout(timer)
