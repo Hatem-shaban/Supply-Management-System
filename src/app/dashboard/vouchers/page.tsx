@@ -286,8 +286,14 @@ export default function VouchersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">الخامه</label>
-                <input type="text" value={form.material} onChange={e => updateField('material', e.target.value)}
-                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                <select value={form.material} onChange={e => updateField('material', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <option value="">اختر الخامه</option>
+                  <option value="تربه">تربه</option>
+                  <option value="رمال">رمال</option>
+                  <option value="رديم">رديم</option>
+                  <option value="سن">سن</option>
+                </select>
               </div>
 
               <div>
