@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export default function DashboardPage() {
-  const { role } = useAuth()
+  const { role, user } = useAuth()
   const [stats, setStats] = useState({ vouchers: 0, companies: 0, drivers: 0, quarries: 0 })
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <p className="text-lg font-medium">مرحباً بك في نظام إدارة التوريدات</p>
+        <p className="text-lg font-medium">مرحباً، <span className="text-blue-600">{user?.full_name || user?.username}</span></p>
         <p className="text-gray-500 mt-1 text-sm">
           نوع الحساب: <span className="font-medium text-gray-700">{role === 'admin' ? 'مدير النظام' : 'مستخدم'}</span>
         </p>
