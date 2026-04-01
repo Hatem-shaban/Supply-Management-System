@@ -29,6 +29,9 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', date: new Date().toISOString().split('T')[0], amount: '' })
+  const [driverOptions, setDriverOptions] = useState<string[]>([])
+  const [companyOptions, setCompanyOptions] = useState<string[]>([])
+  const [quarryOptions, setQuarryOptions] = useState<string[]>([])
 
   useEffect(() => {
     if (role !== 'admin') router.push('/dashboard')
@@ -70,6 +73,20 @@ export default function PaymentsPage() {
   }, [activeTab, router])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      const [drivers, companies, quarries] = await Promise.all([
+        supabase.from('transport_contractors').select('driver_name').order('driver_name'),
+        supabase.from('cubic_records').select('company_name').order('company_name'),
+        supabase.from('quarry_pricing').select('quarry_name').order('quarry_name'),
+      ])
+      if (drivers.data) setDriverOptions([...new Set(drivers.data.map((d: { driver_name: string }) => d.driver_name).filter(Boolean))])
+      if (companies.data) setCompanyOptions([...new Set(companies.data.map((c: { company_name: string }) => c.company_name).filter(Boolean))])
+      if (quarries.data) setQuarryOptions([...new Set(quarries.data.map((q: { quarry_name: string }) => q.quarry_name).filter(Boolean))])
+    }
+    fetchOptions()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -242,8 +259,17 @@ export default function PaymentsPage() {
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{currentTab.nameLabel}</label>
-                <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+                <select
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  required
+                >
+                  <option value="">-- اختر --</option>
+                  {(activeTab === 'driver' ? driverOptions : activeTab === 'company' ? companyOptions : quarryOptions).map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
