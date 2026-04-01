@@ -8,19 +8,19 @@ import { useAuth } from '@/contexts/AuthContext'
 const menuItems = [
   { label: 'الرئيسية', path: '/dashboard', adminOnly: false, icon: '01-dashboard' },
   { label: 'بونات', path: '/dashboard/vouchers', adminOnly: false, icon: '02-vouchers' },
-  { label: 'محضر التكعيب شركات', path: '/dashboard/cubic-records', adminOnly: true, icon: '03-cubic-records' },
-  { label: 'مقاولين النقل', path: '/dashboard/transport-contractors', adminOnly: true, icon: '03-cubic-records' },
-  { label: 'سجل الدفعات', path: '/dashboard/payments', adminOnly: true, icon: '04-payments' },
-  { label: 'تسعيرة المحاجر', path: '/dashboard/quarry-pricing', adminOnly: true, icon: '05-pricing' },
-  { label: 'مصروفات', path: '/dashboard/expenses', adminOnly: true, icon: '06-expenses' },
+  { label: 'محضر التكعيب شركات', path: '/dashboard/cubic-records', adminOnly: false, icon: '03-cubic-records' },
+  { label: 'مقاولين النقل', path: '/dashboard/transport-contractors', adminOnly: false, icon: '03-cubic-records' },
+  { label: 'سجل الدفعات', path: '/dashboard/payments', adminOnly: false, icon: '04-payments' },
+  { label: 'تسعيرة المحاجر', path: '/dashboard/quarry-pricing', adminOnly: false, icon: '05-pricing' },
+  { label: 'مصروفات', path: '/dashboard/expenses', adminOnly: false, icon: '06-expenses' },
   { label: 'إدارة المستخدمين', path: '/dashboard/users', adminOnly: true, icon: '07-users' },
 ]
 
 const reportItems = [
-  { label: 'كشف حساب شركات', path: '/dashboard/reports/company', icon: '08-company-statement' },
-  { label: 'كشف حساب العربيات', path: '/dashboard/reports/vehicles', icon: '09-vehicle-statement' },
-  { label: 'كشف حساب المحاجر', path: '/dashboard/reports/quarries', icon: '10-quarry-statement' },
-  { label: 'كشف حساب ختامي', path: '/dashboard/reports/final', icon: '11-final-statement' },
+  { label: 'كشف حساب شركات', path: '/dashboard/reports/company', adminOnly: false, icon: '08-company-statement' },
+  { label: 'كشف حساب العربيات', path: '/dashboard/reports/vehicles', adminOnly: false, icon: '09-vehicle-statement' },
+  { label: 'كشف حساب المحاجر', path: '/dashboard/reports/quarries', adminOnly: false, icon: '10-quarry-statement' },
+  { label: 'كشف حساب ختامي', path: '/dashboard/reports/final', adminOnly: true, icon: '11-final-statement' },
 ]
 
 export default function Sidebar() {
@@ -36,6 +36,7 @@ export default function Sidebar() {
   }
 
   const filteredItems = menuItems.filter(item => !item.adminOnly || role === 'admin')
+  const filteredReportItems = reportItems.filter(item => !item.adminOnly || role === 'admin')
 
   const isActive = (path: string) => pathname === path
 
@@ -120,7 +121,7 @@ export default function Sidebar() {
           ))}
 
           {/* Reports sub-menu */}
-          {role === 'admin' && (
+          {filteredReportItems.length > 0 && (
             <div>
               <button
                 onClick={() => setReportsOpen(!reportsOpen)}
@@ -143,7 +144,7 @@ export default function Sidebar() {
 
               {reportsOpen && (
                 <div className="mr-4 mt-1 space-y-1 border-r border-slate-600 pr-3">
-                  {reportItems.map(item => (
+                  {filteredReportItems.map(item => (
                     <Link
                       key={item.path}
                       href={item.path}
