@@ -21,6 +21,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; username: string } | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [apiError, setApiError] = useState('')
   const [serviceKeyMissing, setServiceKeyMissing] = useState(false)
@@ -98,8 +99,10 @@ export default function UsersPage() {
     }
   }
 
-  const handleDelete = async (userId: string, username: string) => {
-    if (!confirm(`هل أنت متأكد من حذف المستخدم "${username}"؟`)) return
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    const { id: userId } = deleteTarget
+    setDeleteTarget(null)
     try {
       const res = await fetchWithAuth('/api/admin/users', {
         method: 'DELETE',
@@ -112,14 +115,14 @@ export default function UsersPage() {
           return
         }
         const data = await res.json()
-        alert(data.error || 'حدث خطأ')
+        setApiError(data.error || 'حدث خطأ')
       } else {
         fetchUsers()
       }
     } catch (error) {
       console.error('Delete user error:', error)
       if (!(error instanceof Error && error.message === 'SESSION_EXPIRED')) {
-        alert('فشل حذف المستخدم')
+        setApiError('فشل حذف المستخدم')
       }
     }
   }
@@ -194,7 +197,7 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => handleDelete(user.id, user.username)}
+                        onClick={() => setDeleteTarget({ id: user.id, username: user.username })}
                         className="text-red-500 hover:text-red-700 text-xs"
                       >
                         حذف
@@ -212,6 +215,39 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">تأكيد الحذف</h3>
+                <p className="text-sm text-gray-500 mt-0.5">هل أنت متأكد من حذف المستخدم <span className="font-semibold text-gray-700">{deleteTarget.username}</span>؟ لا يمكن التراجع عن هذا الإجراء.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+              >
+                حذف
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add User Modal */}
       {showModal && (

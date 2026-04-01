@@ -31,6 +31,7 @@ export default function TransportContractorsPage() {
   const router = useRouter()
   const [data, setData] = useState<Contractor[]>([])
   const [showModal, setShowModal] = useState(false)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
   const [submitError, setSubmitError] = useState('')
@@ -107,9 +108,10 @@ export default function TransportContractorsPage() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('هل أنت متأكد من الحذف؟')) return
-    if (!accessToken) return
+  const handleDelete = async () => {
+    if (deleteId === null || !accessToken) return
+    const id = deleteId
+    setDeleteId(null)
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 8000)
@@ -121,7 +123,7 @@ export default function TransportContractorsPage() {
       clearTimeout(timer)
       fetchData()
     } catch {
-      alert('خطأ في الحذف')
+      // deletion failed silently
     }
   }
 
@@ -161,7 +163,7 @@ export default function TransportContractorsPage() {
                   <td className="px-4 py-3 whitespace-nowrap">{row.driver_name}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{row.tractor_number}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                    <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
                   </td>
                 </tr>
               ))}
@@ -172,6 +174,39 @@ export default function TransportContractorsPage() {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">تأكيد الحذف</h3>
+                <p className="text-sm text-gray-500 mt-0.5">هل أنت متأكد من حذف هذا السجل؟ لا يمكن التراجع عن هذا الإجراء.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+              >
+                حذف
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
