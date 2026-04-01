@@ -1,33 +1,29 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-function getAdminClient() {
-  return createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 }
 
 async function verifyAdmin(req: NextRequest) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null
+  const secret = process.env.AUTH_SECRET
+  if (!secret || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null
 
   const token = req.headers.get('Authorization')?.replace('Bearer ', '')
   if (!token) return null
 
-  const anonClient = createClient(SUPABASE_URL, ANON_KEY)
-  const { data: { user }, error } = await anonClient.auth.getUser(token)
-  if (error || !user) return null
-
-  const adminClient = getAdminClient()
-  const { data: profile } = await adminClient
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  return profile?.role === 'admin' ? user : null
+  try {
+    const payload = jwt.verify(token, secret) as { id: string; role: string }
+    return payload.role === 'admin' ? payload : null
+  } catch {
+    return null
+  }
 }
 
 // GET /api/admin/users - list all users
@@ -39,25 +35,14 @@ export async function GET(req: NextRequest) {
   const admin = await verifyAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const adminClient = getAdminClient()
-  const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+  const { data, error } = await getServiceClient()
+    .from('user_profiles')
+    .select('id, username, full_name, role, created_at')
+    .order('created_at', { ascending: true })
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const { data: profiles } = await adminClient.from('user_profiles').select('id, role, full_name')
-  const profileMap = (profiles || []).reduce<Record<string, { role: string; full_name: string }>>(
-    (acc, p) => ({ ...acc, [p.id]: p }),
-    {}
-  )
-
-  const result = users.map(u => ({
-    id: u.id,
-    username: (u.email || '').replace('@supplysystem.com', ''),
-    full_name: profileMap[u.id]?.full_name || '',
-    role: profileMap[u.id]?.role || 'user',
-    created_at: u.created_at,
-  }))
-
-  return NextResponse.json(result)
+  return NextResponse.json(data)
 }
 
 // POST /api/admin/users - create a new user
@@ -80,23 +65,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام فقط' }, { status: 400 })
   }
 
-  const email = `${clean}@supplysystem.com`
-  const adminClient = getAdminClient()
+  const password_hash = await bcrypt.hash(password, 12)
 
-  const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    user_metadata: { full_name: full_name || username },
-    email_confirm: true,
-  })
+  const { error } = await getServiceClient()
+    .from('user_profiles')
+    .insert({ username: clean, password_hash, full_name: full_name || username, role: role || 'user' })
 
-  if (createError) return NextResponse.json({ error: createError.message }, { status: 400 })
+  if (error) {
+    const msg = error.code === '23505' ? 'اسم المستخدم مستخدم بالفعل' : error.message
+    return NextResponse.json({ error: msg }, { status: 400 })
+  }
 
-  await adminClient.from('user_profiles').upsert({
-    id: newUser.user.id,
-    role: role || 'user',
-    full_name: full_name || username,
-  })
+  return NextResponse.json({ success: true })
+}
+
+// PATCH /api/admin/users - update user password
+export async function PATCH(req: NextRequest) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'SERVICE_ROLE_KEY_MISSING' }, { status: 500 })
+  }
+
+  const admin = await verifyAdmin(req)
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { userId, password } = await req.json()
+  if (!userId || !password) {
+    return NextResponse.json({ error: 'userId و password مطلوبان' }, { status: 400 })
+  }
+
+  const password_hash = await bcrypt.hash(password, 12)
+
+  const { error } = await getServiceClient()
+    .from('user_profiles')
+    .update({ password_hash })
+    .eq('id', userId)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
   return NextResponse.json({ success: true })
 }
@@ -117,9 +121,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'لا يمكنك حذف حسابك الخاص' }, { status: 400 })
   }
 
-  const adminClient = getAdminClient()
-  const { error } = await adminClient.auth.admin.deleteUser(userId)
+  const { error } = await getServiceClient()
+    .from('user_profiles')
+    .delete()
+    .eq('id', userId)
+
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
   return NextResponse.json({ success: true })
 }
+

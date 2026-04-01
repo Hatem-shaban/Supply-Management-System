@@ -3,11 +3,21 @@
 -- Run this SQL in Supabase SQL Editor
 -- ============================================
 
--- User profiles (extends Supabase Auth)
+-- ============================================
+-- MIGRATION: If upgrading from Supabase Auth,
+-- run these first to drop the old table:
+--   DROP TABLE IF EXISTS user_profiles CASCADE;
+--   DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+--   DROP FUNCTION IF EXISTS public.handle_new_user();
+-- ============================================
+
+-- User profiles (standalone, no Supabase Auth dependency)
 CREATE TABLE user_profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
   full_name TEXT,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -78,7 +88,11 @@ CREATE TABLE transport_contractors (
 -- ============================================
 -- Enable Row Level Security
 -- ============================================
+-- user_profiles: NO anon policies — only accessible via service role key in API routes
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Data tables: allow anon role (frontend Supabase client uses anon key)
+-- App-level auth (JWT) gates the dashboard UI
 ALTER TABLE cubic_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vouchers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
@@ -87,53 +101,49 @@ ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transport_contractors ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
--- RLS Policies - Read access for authenticated
+-- RLS Policies - Read access for anon (frontend)
 -- ============================================
-CREATE POLICY "auth_read" ON user_profiles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read" ON cubic_records FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read" ON vouchers FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read" ON payments FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read" ON quarry_pricing FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read" ON expenses FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read" ON transport_contractors FOR SELECT TO authenticated USING (true);
+CREATE POLICY "anon_read" ON cubic_records FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read" ON vouchers FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read" ON payments FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read" ON quarry_pricing FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read" ON expenses FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read" ON transport_contractors FOR SELECT TO anon USING (true);
 
 -- ============================================
--- RLS Policies - Insert for authenticated
+-- RLS Policies - Insert for anon (frontend)
 -- ============================================
-CREATE POLICY "auth_insert" ON cubic_records FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "auth_insert" ON vouchers FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "auth_insert" ON payments FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "auth_insert" ON quarry_pricing FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "auth_insert" ON expenses FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "auth_insert" ON transport_contractors FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "anon_insert" ON cubic_records FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_insert" ON vouchers FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_insert" ON payments FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_insert" ON quarry_pricing FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_insert" ON expenses FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_insert" ON transport_contractors FOR INSERT TO anon WITH CHECK (true);
 
 -- ============================================
--- RLS Policies - Delete for authenticated
+-- RLS Policies - Update for anon (frontend)
 -- ============================================
-CREATE POLICY "auth_delete" ON cubic_records FOR DELETE TO authenticated USING (true);
-CREATE POLICY "auth_delete" ON vouchers FOR DELETE TO authenticated USING (true);
-CREATE POLICY "auth_delete" ON payments FOR DELETE TO authenticated USING (true);
-CREATE POLICY "auth_delete" ON quarry_pricing FOR DELETE TO authenticated USING (true);
-CREATE POLICY "auth_delete" ON expenses FOR DELETE TO authenticated USING (true);
-CREATE POLICY "auth_delete" ON transport_contractors FOR DELETE TO authenticated USING (true);
+CREATE POLICY "anon_update" ON cubic_records FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_update" ON vouchers FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_update" ON payments FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_update" ON quarry_pricing FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_update" ON expenses FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_update" ON transport_contractors FOR UPDATE TO anon USING (true);
 
 -- ============================================
--- Auto-create user profile on signup
+-- RLS Policies - Delete for anon (frontend)
 -- ============================================
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.user_profiles (id, role, full_name)
-  VALUES (NEW.id, 'user', NEW.raw_user_meta_data->>'full_name');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+CREATE POLICY "anon_delete" ON cubic_records FOR DELETE TO anon USING (true);
+CREATE POLICY "anon_delete" ON vouchers FOR DELETE TO anon USING (true);
+CREATE POLICY "anon_delete" ON payments FOR DELETE TO anon USING (true);
+CREATE POLICY "anon_delete" ON quarry_pricing FOR DELETE TO anon USING (true);
+CREATE POLICY "anon_delete" ON expenses FOR DELETE TO anon USING (true);
+CREATE POLICY "anon_delete" ON transport_contractors FOR DELETE TO anon USING (true);
 
 -- ============================================
--- To make first user admin, run:
--- UPDATE user_profiles SET role = 'admin' WHERE id = 'USER_UUID_HERE';
+-- Create the first admin user (run after setup)
+-- Replace with real values and a bcrypt hash of the password.
+-- You can generate one at: https://bcrypt-generator.com/ (cost 12)
 -- ============================================
+-- INSERT INTO user_profiles (username, password_hash, full_name, role)
+-- VALUES ('admin', '$2a$12$...your_bcrypt_hash...', 'المدير', 'admin');
