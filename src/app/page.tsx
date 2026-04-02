@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -45,9 +46,14 @@ export default function LoginPage() {
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
+            <Image
+              src="/icons/quarry_management_icon.png"
+              alt="Quarry management"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
+              priority
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-800">إدارة التوريدات</h1>
           <p className="text-gray-500 mt-2">تسجيل الدخول إلى النظام</p>
