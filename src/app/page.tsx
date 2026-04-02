@@ -45,13 +45,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Image
               src="/icons/quarry_management_icon.png"
               alt="Quarry management"
-              width={128}
-              height={128}
-              className="w-16 h-16 object-contain"
+              width={160}
+              height={160}
+              className="w-full h-full object-contain"
               priority
             />
           </div>
