@@ -49,9 +49,9 @@ export default function LoginPage() {
             <Image
               src="/icons/quarry_management_icon.png"
               alt="Quarry management"
-              width={64}
-              height={64}
-              className="w-14 h-14 object-contain"
+              width={128}
+              height={128}
+              className="w-16 h-16 object-contain"
               priority
             />
           </div>
