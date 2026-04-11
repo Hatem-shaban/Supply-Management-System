@@ -45,10 +45,6 @@ export default function CubicRecordsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [contractors, setContractors] = useState<Array<{driver_name: string, tractor_number: string}>>([])  
 
-  useEffect(() => {
-    if (role !== 'admin') router.push('/dashboard')
-  }, [role, router])
-
   const fetchData = useCallback(async () => {
     try {
       const controller = new AbortController()
@@ -153,8 +149,6 @@ export default function CubicRecordsPage() {
   const filteredTractors = contractors
     .filter(c => c.driver_name === form.driver_name)
     .map(c => c.tractor_number)
-
-  if (role !== 'admin') return null
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>

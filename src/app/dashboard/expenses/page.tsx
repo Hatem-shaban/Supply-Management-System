@@ -23,10 +23,6 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
 
-  useEffect(() => {
-    if (role !== 'admin') router.push('/dashboard')
-  }, [role, router])
-
   const fetchData = useCallback(async () => {
     const { data } = await supabase
       .from('expenses')
@@ -59,8 +55,6 @@ export default function ExpensesPage() {
     await supabase.from('expenses').delete().eq('id', id)
     fetchData()
   }
-
-  if (role !== 'admin') return null
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>

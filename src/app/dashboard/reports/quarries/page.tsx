@@ -22,10 +22,6 @@ export default function QuarryStatementPage() {
   const [selectedQuarry, setSelectedQuarry] = useState('')
 
   useEffect(() => {
-    if (role !== 'admin') router.push('/dashboard')
-  }, [role, router])
-
-  useEffect(() => {
     const fetchReport = async () => {
       const [vouchersRes, paymentsRes, pricingRes] = await Promise.all([
         supabase.from('vouchers').select('quarry_name, cubic_capacity, discount, material'),
@@ -80,8 +76,6 @@ export default function QuarryStatementPage() {
 
     fetchReport()
   }, [])
-
-  if (role !== 'admin') return null
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>

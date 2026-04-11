@@ -22,10 +22,6 @@ export default function CompanyStatementPage() {
   const [selectedCompany, setSelectedCompany] = useState('')
 
   useEffect(() => {
-    if (role !== 'admin') router.push('/dashboard')
-  }, [role, router])
-
-  useEffect(() => {
     const fetchReport = async () => {
       const [vouchersRes, paymentsRes, cubicRes] = await Promise.all([
         supabase.from('vouchers').select('company_name, cubic_capacity, discount'),
@@ -76,8 +72,6 @@ export default function CompanyStatementPage() {
 
     fetchReport()
   }, [])
-
-  if (role !== 'admin') return null
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
