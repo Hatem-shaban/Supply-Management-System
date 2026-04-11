@@ -21,6 +21,7 @@ const reportItems = [
   { label: 'كشف حساب العربيات', path: '/dashboard/reports/vehicles', adminOnly: false, icon: '09-vehicle-statement' },
   { label: 'كشف حساب المحاجر', path: '/dashboard/reports/quarries', adminOnly: false, icon: '10-quarry-statement' },
   { label: 'كشف حساب ختامي', path: '/dashboard/reports/final', adminOnly: true, icon: '11-final-statement' },
+  { label: 'تقرير صافي الربح', path: '/dashboard/reports/profit', adminOnly: true, icon: '11-final-statement' },
 ]
 
 export default function Sidebar() {
