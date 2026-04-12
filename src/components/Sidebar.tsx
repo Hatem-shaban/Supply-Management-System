@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import ChangePasswordModal from './ChangePasswordModal'
 
 const menuItems = [
   { label: 'الرئيسية', path: '/dashboard', adminOnly: false, icon: '01-dashboard' },
@@ -30,6 +31,7 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [reportsOpen, setReportsOpen] = useState(false)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   const getIconSrc = (iconName: string, isHovered: boolean) => {
     const folder = isHovered ? 'hover' : 'standard'
@@ -172,8 +174,17 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* Sign out */}
-        <div className="absolute bottom-0 right-0 left-0 p-3 border-t border-slate-700">
+        {/* Sign out and Settings */}
+        <div className="absolute bottom-0 right-0 left-0 p-3 border-t border-slate-700 space-y-2">
+          <button
+            onClick={() => setShowChangePassword(true)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-slate-400 hover:bg-blue-600/90 hover:text-white rounded-lg transition text-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            تغيير كلمة المرور
+          </button>
           <button
             onClick={signOut}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 text-slate-400 hover:bg-red-600/90 hover:text-white rounded-lg transition text-sm"
@@ -184,6 +195,9 @@ export default function Sidebar() {
             تسجيل الخروج
           </button>
         </div>
+
+        {/* Change Password Modal */}
+        <ChangePasswordModal isOpen={showChangePassword} onClose={() => setShowChangePassword(false)} />
       </aside>
     </>
   )
