@@ -66,7 +66,7 @@ export default function QuarryPricingPage() {
       quarry_name: form.quarry_name,
       material: form.material,
       price: parseFloat(form.price) || 0,
-    }).eq('id', editRow.id)
+    }).eq('id', editRow.id).select()
     if (error) {
       setUpdateError(error.message)
     } else {

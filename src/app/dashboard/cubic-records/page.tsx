@@ -148,7 +148,7 @@ export default function CubicRecordsPage() {
       const timer = setTimeout(() => controller.abort(), 8000)
       const res = await fetch(`${SUPABASE_URL}/rest/v1/cubic_records?id=eq.${editRow.id}`, {
         method: 'PATCH',
-        headers: dbHeaders(),
+        headers: { ...dbHeaders(), 'Prefer': 'return=representation' },
         body: JSON.stringify({
           company_name: form.company_name,
           vehicle_number: form.vehicle_number,

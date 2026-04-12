@@ -66,7 +66,7 @@ export default function ExpensesPage() {
       date: form.date,
       item: form.item,
       value: parseFloat(form.value) || 0,
-    }).eq('id', editRow.id)
+    }).eq('id', editRow.id).select()
     if (error) {
       setUpdateError(error.message)
     } else {

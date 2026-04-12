@@ -134,7 +134,7 @@ export default function VouchersPage() {
       discount: parseFloat(form.discount) || 0,
       quarry_name: form.quarry_name,
       mashal_price: parseFloat(form.mashal_price) || 0,
-    }).eq('id', editRow.id)
+    }).eq('id', editRow.id).select()
     if (error) {
       setUpdateError(error.message)
     } else {

@@ -127,7 +127,7 @@ export default function TransportContractorsPage() {
       const timer = setTimeout(() => controller.abort(), 8000)
       const res = await fetch(`${SUPABASE_URL}/rest/v1/transport_contractors?id=eq.${editRow.id}`, {
         method: 'PATCH',
-        headers: dbHeaders(),
+        headers: { ...dbHeaders(), 'Prefer': 'return=representation' },
         body: JSON.stringify({
           driver_name: form.driver_name.trim(),
           tractor_number: form.tractor_number.trim(),
