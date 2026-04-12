@@ -75,8 +75,6 @@ export default function VehicleStatementPage() {
         <ReportActions contentRef={reportRef} filename="كشف حساب العربيات" />
       </div>
 
-      <div ref={reportRef}>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب العربيات</h1>
       <div className="mb-4 print:hidden">
         <select
           value={selectedDriver}
@@ -90,6 +88,9 @@ export default function VehicleStatementPage() {
           ))}
         </select>
       </div>
+
+      <div ref={reportRef}>
+      <h1 className="text-2xl font-bold mb-6">كشف حساب العربيات</h1>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

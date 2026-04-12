@@ -94,9 +94,7 @@ export default function FinalStatementPage() {
         <ReportActions contentRef={reportRef} filename="كشف حساب ختامي" />
       </div>
 
-      <div ref={reportRef}>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب ختامي</h1>
-      <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+      <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl print:hidden">
         <div className="space-y-5">
           {/* User inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -123,10 +121,13 @@ export default function FinalStatementPage() {
               />
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Divider */}
-          <hr className="border-gray-200" />
-
+      <div ref={reportRef}>
+      <h1 className="text-2xl font-bold mb-6">كشف حساب ختامي</h1>
+      <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+        <div className="space-y-5">
           {/* Calculated values */}
           <div className="space-y-4">
             <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">

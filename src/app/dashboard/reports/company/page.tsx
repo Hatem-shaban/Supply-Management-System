@@ -88,8 +88,6 @@ export default function CompanyStatementPage() {
         <ReportActions contentRef={reportRef} filename="كشف حساب شركات" />
       </div>
 
-      <div ref={reportRef}>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب شركات</h1>
       <div className="mb-4 print:hidden">
         <select
           value={selectedCompany}
@@ -103,6 +101,9 @@ export default function CompanyStatementPage() {
           ))}
         </select>
       </div>
+
+      <div ref={reportRef}>
+      <h1 className="text-2xl font-bold mb-6">كشف حساب شركات</h1>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

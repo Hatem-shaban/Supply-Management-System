@@ -92,8 +92,6 @@ export default function QuarryStatementPage() {
         <ReportActions contentRef={reportRef} filename="كشف حساب المحاجر" />
       </div>
 
-      <div ref={reportRef}>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب المحاجر</h1>
       <div className="mb-4 print:hidden">
         <select
           value={selectedQuarry}
@@ -107,6 +105,9 @@ export default function QuarryStatementPage() {
           ))}
         </select>
       </div>
+
+      <div ref={reportRef}>
+      <h1 className="text-2xl font-bold mb-6">كشف حساب المحاجر</h1>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
