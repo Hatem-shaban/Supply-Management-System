@@ -134,6 +134,32 @@ export default function PaymentsPage() {
     }
   }
 
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editRow) return
+    try {
+      const { error } = await supabase.from('payments').update({
+        name: form.name,
+        date: form.date,
+        amount: parseFloat(form.amount) || 0,
+      }).eq('id', editRow.id)
+      if (error) {
+        console.error('Update error:', error)
+        if (error.code === 'PGRST116' || error.message?.includes('401')) {
+          handleSessionError(); return
+        }
+        setError('فشل تعديل الدفعة')
+      } else {
+        setEditRow(null)
+        setForm({ name: '', date: new Date().toISOString().split('T')[0], amount: '' })
+        fetchData()
+      }
+    } catch (err) {
+      console.error('Update exception:', err)
+      setError('فشل تعديل الدفعة')
+    }
+  }
+
   const currentTab = tabs.find(t => t.key === activeTab)!
 
   return (
