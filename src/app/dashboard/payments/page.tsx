@@ -34,6 +34,10 @@ export default function PaymentsPage() {
   const [companyOptions, setCompanyOptions] = useState<string[]>([])
   const [quarryOptions, setQuarryOptions] = useState<string[]>([])
 
+  useEffect(() => {
+    if (role !== 'admin') router.push('/dashboard')
+  }, [role, router])
+
   const handleSessionError = () => {
     setLoading(false)
     setError('انتهت جلستك - يرجى تسجيل الدخول مجددًا')
@@ -161,6 +165,8 @@ export default function PaymentsPage() {
   }
 
   const currentTab = tabs.find(t => t.key === activeTab)!
+
+  if (role !== 'admin') return null
 
   return (
     <div>
