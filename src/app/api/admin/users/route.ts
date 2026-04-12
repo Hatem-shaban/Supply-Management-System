@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ success: true })
 }
 
-// PATCH /api/admin/users - update user password
+// PATCH /api/admin/users - update user fields
 export async function PATCH(req: NextRequest) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: 'SERVICE_ROLE_KEY_MISSING' }, { status: 500 })
@@ -88,16 +88,25 @@ export async function PATCH(req: NextRequest) {
   const admin = await verifyAdmin(req)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { userId, password } = await req.json()
-  if (!userId || !password) {
-    return NextResponse.json({ error: 'userId و password مطلوبان' }, { status: 400 })
+  const { userId, password, full_name, role } = await req.json()
+  if (!userId) {
+    return NextResponse.json({ error: 'userId مطلوب' }, { status: 400 })
   }
 
-  const password_hash = await bcrypt.hash(password, 12)
+  const updates: Record<string, string> = {}
+  if (full_name !== undefined) updates.full_name = full_name
+  if (role !== undefined) updates.role = role
+  if (password) {
+    updates.password_hash = await bcrypt.hash(password, 12)
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'لا توجد بيانات للتحديث' }, { status: 400 })
+  }
 
   const { error } = await getServiceClient()
     .from('user_profiles')
-    .update({ password_hash })
+    .update(updates)
     .eq('id', userId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

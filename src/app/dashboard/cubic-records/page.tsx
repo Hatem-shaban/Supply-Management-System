@@ -43,6 +43,7 @@ export default function CubicRecordsPage() {
   const [form, setForm] = useState(emptyForm)
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [editRow, setEditRow] = useState<CubicRecord | null>(null)
   const [contractors, setContractors] = useState<Array<{driver_name: string, tractor_number: string}>>([])  
 
   const fetchData = useCallback(async () => {
@@ -137,6 +138,46 @@ export default function CubicRecordsPage() {
     }
   }
 
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editRow) return
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 8000)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/cubic_records?id=eq.${editRow.id}`, {
+        method: 'PATCH',
+        headers: dbHeaders(),
+        body: JSON.stringify({
+          company_name: form.company_name,
+          vehicle_number: form.vehicle_number,
+          cubic_capacity: parseFloat(form.cubic_capacity) || 0,
+          location: form.location,
+          company_price: parseFloat(form.company_price) || 0,
+        }),
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
+      if (!res.ok) {
+        const body = await res.text()
+        setSubmitError(`خطأ ${res.status}: ${body}`)
+      } else {
+        setEditRow(null)
+        setForm(emptyForm)
+        fetchData()
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setSubmitError('انتهت مهلة الاتصال. حاول لاحقاً.')
+      } else {
+        setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const updateField = (field: string, value: string) => {
     if (field === 'driver_name') {
       setForm(prev => ({ ...prev, driver_name: value, vehicle_number: '' }))
@@ -183,7 +224,15 @@ export default function CubicRecordsPage() {
                   <td className="px-4 py-3 whitespace-nowrap">{row.location}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{row.company_price}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                    <div className="flex gap-3 items-center">
+                      <button
+                        onClick={() => { setEditRow(row); setForm({ ...emptyForm, company_name: row.company_name, vehicle_number: row.vehicle_number, cubic_capacity: String(row.cubic_capacity), location: row.location, company_price: String(row.company_price) }) }}
+                        className="text-blue-500 hover:text-blue-700 text-xs"
+                      >
+                        تعديل
+                      </button>
+                      <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -224,6 +273,60 @@ export default function CubicRecordsPage() {
                 حذف
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editRow !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white rounded-t-xl">
+              <h2 className="text-lg font-bold">تعديل سجل تكعيب</h2>
+              <button onClick={() => { setEditRow(null); setForm(emptyForm); setSubmitError('') }} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdate} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">اسم الشركة</label>
+                <input type="text" value={form.company_name} onChange={e => setForm(prev => ({ ...prev, company_name: e.target.value }))}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">رقم العربية</label>
+                <input type="text" value={form.vehicle_number} onChange={e => setForm(prev => ({ ...prev, vehicle_number: e.target.value }))}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">تكعيب العربية</label>
+                <input type="number" step="0.01" value={form.cubic_capacity} onChange={e => setForm(prev => ({ ...prev, cubic_capacity: e.target.value }))}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">الموقع</label>
+                <input type="text" value={form.location} onChange={e => setForm(prev => ({ ...prev, location: e.target.value }))}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">سعر الشركة</label>
+                <input type="number" step="0.01" value={form.company_price} onChange={e => setForm(prev => ({ ...prev, company_price: e.target.value }))}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">{submitError}</div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={submitting}
+                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+                  {submitting ? 'جاري الحفظ...' : 'حفظ'}
+                </button>
+                <button type="button" onClick={() => { setEditRow(null); setForm(emptyForm); setSubmitError('') }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

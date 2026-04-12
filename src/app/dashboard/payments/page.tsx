@@ -29,6 +29,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', date: new Date().toISOString().split('T')[0], amount: '' })
+  const [editRow, setEditRow] = useState<Payment | null>(null)
   const [driverOptions, setDriverOptions] = useState<string[]>([])
   const [companyOptions, setCompanyOptions] = useState<string[]>([])
   const [quarryOptions, setQuarryOptions] = useState<string[]>([])
@@ -191,7 +192,15 @@ export default function PaymentsPage() {
                     <td className="px-4 py-3 whitespace-nowrap">{row.date}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{row.amount}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                      <div className="flex gap-3 items-center">
+                        <button
+                          onClick={() => { setEditRow(row); setForm({ name: row.name, date: row.date, amount: String(row.amount) }) }}
+                          className="text-blue-500 hover:text-blue-700 text-xs"
+                        >
+                          تعديل
+                        </button>
+                        <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -233,6 +242,100 @@ export default function PaymentsPage() {
                 حذف
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editRow !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b">
+              <h2 className="text-lg font-bold">تعديل دفعة - {currentTab.label}</h2>
+              <button onClick={() => { setEditRow(null); setForm({ name: '', date: new Date().toISOString().split('T')[0], amount: '' }) }} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdate} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{currentTab.nameLabel}</label>
+                <select
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  required
+                >
+                  <option value="">-- اختر --</option>
+                  {(activeTab === 'driver' ? driverOptions : activeTab === 'company' ? companyOptions : quarryOptions).map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ</label>
+                <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ</label>
+                <input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium">حفظ</button>
+                <button type="button" onClick={() => { setEditRow(null); setForm({ name: '', date: new Date().toISOString().split('T')[0], amount: '' }) }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editRow !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b">
+              <h2 className="text-lg font-bold">تعديل دفعة - {currentTab.label}</h2>
+              <button onClick={() => { setEditRow(null); setForm({ name: '', date: new Date().toISOString().split('T')[0], amount: '' }) }} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdate} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{currentTab.nameLabel}</label>
+                <select
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  required
+                >
+                  <option value="">-- اختر --</option>
+                  {(activeTab === 'driver' ? driverOptions : activeTab === 'company' ? companyOptions : quarryOptions).map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ</label>
+                <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ</label>
+                <input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium">حفظ</button>
+                <button type="button" onClick={() => { setEditRow(null); setForm({ name: '', date: new Date().toISOString().split('T')[0], amount: '' }) }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

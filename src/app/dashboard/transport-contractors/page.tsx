@@ -36,6 +36,7 @@ export default function TransportContractorsPage() {
   const [form, setForm] = useState(emptyForm)
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [editRow, setEditRow] = useState<Contractor | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -116,6 +117,43 @@ export default function TransportContractorsPage() {
     }
   }
 
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editRow) return
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 8000)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/transport_contractors?id=eq.${editRow.id}`, {
+        method: 'PATCH',
+        headers: dbHeaders(),
+        body: JSON.stringify({
+          driver_name: form.driver_name.trim(),
+          tractor_number: form.tractor_number.trim(),
+        }),
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
+      if (!res.ok) {
+        const body = await res.text()
+        setSubmitError(`خطأ ${res.status}: ${body}`)
+      } else {
+        setEditRow(null)
+        setForm(emptyForm)
+        fetchData()
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setSubmitError('انتهت مهلة الاتصال. حاول لاحقاً.')
+      } else {
+        setSubmitError(err instanceof Error ? err.message : 'حدث خطأ غير متوقع')
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const updateField = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
   }
@@ -150,7 +188,15 @@ export default function TransportContractorsPage() {
                   <td className="px-4 py-3 whitespace-nowrap">{row.driver_name}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{row.tractor_number}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                    <div className="flex gap-3 items-center">
+                      <button
+                        onClick={() => { setEditRow(row); setForm({ driver_name: row.driver_name, tractor_number: row.tractor_number }) }}
+                        className="text-blue-500 hover:text-blue-700 text-xs"
+                      >
+                        تعديل
+                      </button>
+                      <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -191,6 +237,45 @@ export default function TransportContractorsPage() {
                 حذف
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editRow !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white rounded-t-xl">
+              <h2 className="text-lg font-bold">تعديل مقاول نقل</h2>
+              <button onClick={() => { setEditRow(null); setForm(emptyForm); setSubmitError('') }} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdate} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">اسم السائق</label>
+                <input type="text" value={form.driver_name} onChange={e => updateField('driver_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجرار</label>
+                <input type="text" value={form.tractor_number} onChange={e => updateField('tractor_number', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              {submitError && (
+                <p className="text-red-500 text-sm">{submitError}</p>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={submitting}
+                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50">
+                  {submitting ? 'جاري الحفظ...' : 'حفظ'}
+                </button>
+                <button type="button" onClick={() => { setEditRow(null); setForm(emptyForm); setSubmitError('') }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

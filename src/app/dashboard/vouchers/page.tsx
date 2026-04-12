@@ -38,6 +38,7 @@ export default function VouchersPage() {
   const [data, setData] = useState<Voucher[]>([])
   const [showModal, setShowModal] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [editRow, setEditRow] = useState<Voucher | null>(null)
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
   const [companies, setCompanies] = useState<string[]>([])
@@ -116,6 +117,29 @@ export default function VouchersPage() {
     fetchData()
   }
 
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editRow) return
+    const { error } = await supabase.from('vouchers').update({
+      date: form.date,
+      company_name: form.company_name,
+      tractor_number: form.tractor_number,
+      driver_name: form.driver_name,
+      cubic_capacity: parseFloat(form.cubic_capacity) || 0,
+      voucher_number: form.voucher_number,
+      location: form.location,
+      material: form.material,
+      discount: parseFloat(form.discount) || 0,
+      quarry_name: form.quarry_name,
+      mashal_price: parseFloat(form.mashal_price) || 0,
+    }).eq('id', editRow.id)
+    if (!error) {
+      setEditRow(null)
+      setForm(emptyForm)
+      fetchData()
+    }
+  }
+
   const updateField = (field: string, value: string) => {
     if (field === 'driver_name') {
       setForm(prev => ({ ...prev, driver_name: value, tractor_number: '' }))
@@ -172,7 +196,30 @@ export default function VouchersPage() {
                   <td className="px-4 py-3 whitespace-nowrap">{row.mashal_price}</td>
                   <td className="px-4 py-3">
                     {role === 'admin' && (
-                      <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                      <div className="flex gap-3 items-center">
+                        <button
+                          onClick={() => {
+                            setEditRow(row)
+                            setForm({
+                              date: row.date,
+                              company_name: row.company_name,
+                              tractor_number: row.tractor_number,
+                              driver_name: row.driver_name,
+                              cubic_capacity: String(row.cubic_capacity),
+                              voucher_number: row.voucher_number,
+                              location: row.location,
+                              material: row.material,
+                              discount: String(row.discount),
+                              quarry_name: row.quarry_name,
+                              mashal_price: String(row.mashal_price),
+                            })
+                          }}
+                          className="text-blue-500 hover:text-blue-700 text-xs"
+                        >
+                          تعديل
+                        </button>
+                        <button onClick={() => setDeleteId(row.id)} className="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -214,6 +261,100 @@ export default function VouchersPage() {
                 حذف
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editRow !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white rounded-t-xl">
+              <h2 className="text-lg font-bold">تعديل بون</h2>
+              <button onClick={() => { setEditRow(null); setForm(emptyForm) }} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdate} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ</label>
+                <input type="date" value={form.date} onChange={e => updateField('date', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">اسم الشركة</label>
+                <select value={form.company_name} onChange={e => updateField('company_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                  <option value="">اختر الشركة</option>
+                  {companies.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">اسم السائق</label>
+                <select value={form.driver_name} onChange={e => updateField('driver_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                  <option value="">اختر السائق</option>
+                  {drivers.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجرار</label>
+                <select value={form.tractor_number} onChange={e => updateField('tractor_number', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required
+                  disabled={!form.driver_name}>
+                  <option value="">اختر رقم الجرار</option>
+                  {filteredTractors.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">(الحموله) التكعيب</label>
+                <input type="number" step="0.01" value={form.cubic_capacity} onChange={e => updateField('cubic_capacity', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">رقم البون</label>
+                <input type="text" value={form.voucher_number} onChange={e => updateField('voucher_number', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">الموقع</label>
+                <input type="text" value={form.location} onChange={e => updateField('location', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">الخامه</label>
+                <select value={form.material} onChange={e => updateField('material', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <option value="">اختر الخامه</option>
+                  <option value="تربه">تربه</option>
+                  <option value="رمال">رمال</option>
+                  <option value="رديم">رديم</option>
+                  <option value="سن">سن</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">الخصم</label>
+                <input type="number" step="0.01" value={form.discount} onChange={e => updateField('discount', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">اسم المحجر</label>
+                <input type="text" value={form.quarry_name} onChange={e => updateField('quarry_name', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">سعر المشال</label>
+                <input type="number" step="0.01" value={form.mashal_price} onChange={e => updateField('mashal_price', e.target.value)}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium">حفظ</button>
+                <button type="button" onClick={() => { setEditRow(null); setForm(emptyForm) }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

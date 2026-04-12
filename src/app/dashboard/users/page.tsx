@@ -22,6 +22,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; username: string } | null>(null)
+  const [editTarget, setEditTarget] = useState<UserRow | null>(null)
+  const [editForm, setEditForm] = useState({ full_name: '', role: 'user', password: '' })
   const [form, setForm] = useState(emptyForm)
   const [apiError, setApiError] = useState('')
   const [serviceKeyMissing, setServiceKeyMissing] = useState(false)
@@ -110,10 +112,7 @@ export default function UsersPage() {
       }, handleAuthError)
 
       if (!res.ok) {
-        if (res.status === 401) {
-          handleAuthError()
-          return
-        }
+        if (res.status === 401) { handleAuthError(); return }
         const data = await res.json()
         setApiError(data.error || 'حدث خطأ')
       } else {
@@ -123,6 +122,38 @@ export default function UsersPage() {
       console.error('Delete user error:', error)
       if (!(error instanceof Error && error.message === 'SESSION_EXPIRED')) {
         setApiError('فشل حذف المستخدم')
+      }
+    }
+  }
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editTarget) return
+    setApiError('')
+    const body: Record<string, string> = {
+      userId: editTarget.id,
+      full_name: editForm.full_name,
+      role: editForm.role,
+    }
+    if (editForm.password) body.password = editForm.password
+    try {
+      const res = await fetchWithAuth('/api/admin/users', {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }, handleAuthError)
+      if (!res.ok) {
+        if (res.status === 401) { handleAuthError(); return }
+        const data = await res.json()
+        setApiError(data.error || 'حدث خطأ')
+      } else {
+        setEditTarget(null)
+        setEditForm({ full_name: '', role: 'user', password: '' })
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error('Edit user error:', error)
+      if (!(error instanceof Error && error.message === 'SESSION_EXPIRED')) {
+        setApiError('فشل تعديل المستخدم')
       }
     }
   }
@@ -196,12 +227,20 @@ export default function UsersPage() {
                       {new Date(user.created_at).toLocaleDateString('ar-EG')}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => setDeleteTarget({ id: user.id, username: user.username })}
-                        className="text-red-500 hover:text-red-700 text-xs"
-                      >
-                        حذف
-                      </button>
+                      <div className="flex gap-3 items-center">
+                        <button
+                          onClick={() => { setEditTarget(user); setEditForm({ full_name: user.full_name || '', role: user.role, password: '' }); setApiError('') }}
+                          className="text-blue-500 hover:text-blue-700 text-xs"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget({ id: user.id, username: user.username })}
+                          className="text-red-500 hover:text-red-700 text-xs"
+                        >
+                          حذف
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -215,6 +254,63 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Edit User Modal */}
+      {editTarget !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="flex items-center justify-between p-5 border-b">
+              <h2 className="text-lg font-bold">تعديل مستخدم: {editTarget.username}</h2>
+              <button onClick={() => { setEditTarget(null); setEditForm({ full_name: '', role: 'user', password: '' }); setApiError('') }} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleEditSave} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
+                <input
+                  type="text"
+                  value={editForm.full_name}
+                  onChange={e => setEditForm({ ...editForm, full_name: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="الاسم بالعربي (اختياري)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">الدور</label>
+                <select
+                  value={editForm.role}
+                  onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                >
+                  <option value="user">مستخدم — بونات فقط</option>
+                  <option value="admin">مدير — وصول كامل</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">كلمة مرور جديدة (اتركها فارغة لعدم التغيير)</label>
+                <input
+                  type="password"
+                  value={editForm.password}
+                  onChange={e => setEditForm({ ...editForm, password: e.target.value })}
+                  className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  minLength={6}
+                />
+              </div>
+              {apiError && (
+                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{apiError}</div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium">حفظ</button>
+                <button type="button" onClick={() => { setEditTarget(null); setEditForm({ full_name: '', role: 'user', password: '' }); setApiError('') }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteTarget !== null && (
