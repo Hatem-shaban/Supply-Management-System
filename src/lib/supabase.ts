@@ -4,4 +4,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
 
 // Plain database client — authentication is handled by our own JWT system
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Disable session persistence so the client always uses the anon key role
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+})
