@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import ReportActions from '@/components/ReportActions'
 
 type ProfitRow = {
   id: number
@@ -22,6 +23,7 @@ type ProfitRow = {
 export default function ProfitReportPage() {
   const { role } = useAuth()
   const router = useRouter()
+  const reportRef = useRef<HTMLDivElement>(null)
   const [rows, setRows] = useState<ProfitRow[]>([])
   const [loading, setLoading] = useState(true)
   const [filterCompany, setFilterCompany] = useState('')
@@ -143,8 +145,12 @@ export default function ProfitReportPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">تقرير صافي الربح</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">تقرير صافي الربح</h1>
+        <ReportActions contentRef={reportRef} filename="profit-report" />
+      </div>
 
+      <div ref={reportRef}>
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-4 items-end">
         <div className="flex flex-col gap-1">
@@ -276,6 +282,7 @@ export default function ProfitReportPage() {
             )}
           </table>
         </div>
+      </div>
       </div>
     </div>
   )

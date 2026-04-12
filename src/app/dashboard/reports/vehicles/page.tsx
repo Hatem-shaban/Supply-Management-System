@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import ReportActions from '@/components/ReportActions'
 
 type DriverRow = {
   driver_name: string
@@ -15,6 +16,7 @@ type DriverRow = {
 export default function VehicleStatementPage() {
   const { role } = useAuth()
   const router = useRouter()
+  const reportRef = useRef<HTMLDivElement>(null)
   const [rows, setRows] = useState<DriverRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDriver, setSelectedDriver] = useState('')
@@ -68,8 +70,12 @@ export default function VehicleStatementPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب العربيات</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">كشف حساب العربيات</h1>
+        <ReportActions contentRef={reportRef} filename="vehicle-statement" />
+      </div>
 
+      <div ref={reportRef}>
       <div className="mb-4">
         <select
           value={selectedDriver}
@@ -121,6 +127,7 @@ export default function VehicleStatementPage() {
             )}
           </table>
         </div>
+      </div>
       </div>
     </div>
   )

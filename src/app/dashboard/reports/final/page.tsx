@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import ReportActions from '@/components/ReportActions'
 
 export default function FinalStatementPage() {
   const { role } = useAuth()
   const router = useRouter()
+  const reportRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [openingBalance, setOpeningBalance] = useState('')
   const [liquidity, setLiquidity] = useState('')
@@ -87,8 +89,12 @@ export default function FinalStatementPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب ختامي</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">كشف حساب ختامي</h1>
+        <ReportActions contentRef={reportRef} filename="final-statement" />
+      </div>
 
+      <div ref={reportRef}>
       <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
         <div className="space-y-5">
           {/* User inputs */}
@@ -149,6 +155,7 @@ export default function FinalStatementPage() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

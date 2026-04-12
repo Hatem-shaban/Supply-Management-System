@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import ReportActions from '@/components/ReportActions'
 
 type CompanyRow = {
   company_name: string
@@ -17,6 +18,7 @@ type CompanyRow = {
 export default function CompanyStatementPage() {
   const { role } = useAuth()
   const router = useRouter()
+  const reportRef = useRef<HTMLDivElement>(null)
   const [rows, setRows] = useState<CompanyRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCompany, setSelectedCompany] = useState('')
@@ -81,8 +83,12 @@ export default function CompanyStatementPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب شركات</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">كشف حساب شركات</h1>
+        <ReportActions contentRef={reportRef} filename="company-statement" />
+      </div>
 
+      <div ref={reportRef}>
       <div className="mb-4">
         <select
           value={selectedCompany}
@@ -138,6 +144,7 @@ export default function CompanyStatementPage() {
             )}
           </table>
         </div>
+      </div>
       </div>
     </div>
   )

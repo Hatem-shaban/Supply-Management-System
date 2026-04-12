@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import ReportActions from '@/components/ReportActions'
 
 type QuarryRow = {
   quarry_name: string
@@ -17,6 +18,7 @@ type QuarryRow = {
 export default function QuarryStatementPage() {
   const { role } = useAuth()
   const router = useRouter()
+  const reportRef = useRef<HTMLDivElement>(null)
   const [rows, setRows] = useState<QuarryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedQuarry, setSelectedQuarry] = useState('')
@@ -85,8 +87,12 @@ export default function QuarryStatementPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">كشف حساب المحاجر</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">كشف حساب المحاجر</h1>
+        <ReportActions contentRef={reportRef} filename="quarry-statement" />
+      </div>
 
+      <div ref={reportRef}>
       <div className="mb-4">
         <select
           value={selectedQuarry}
@@ -142,6 +148,7 @@ export default function QuarryStatementPage() {
             )}
           </table>
         </div>
+      </div>
       </div>
     </div>
   )

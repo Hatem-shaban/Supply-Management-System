@@ -72,3 +72,49 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 6px 12px;
   }
 }
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide sidebar and non-report elements */
+  nav, aside, .sidebar, header,
+  .print\\:hidden, [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  /* Make main content full width */
+  main {
+    margin: 0 !important;
+    padding: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Ensure tables print nicely */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+  }
+
+  th, td {
+    border: 1px solid #d1d5db !important;
+    padding: 6px 8px !important;
+  }
+
+  /* Preserve background colors */
+  .bg-gray-50, tfoot tr, thead tr {
+    background-color: #f9fafb !important;
+  }
+
+  /* Page margins */
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}
