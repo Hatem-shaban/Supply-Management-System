@@ -23,6 +23,7 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
   const [editRow, setEditRow] = useState<Expense | null>(null)
+  const [updateError, setUpdateError] = useState('')
 
   const fetchData = useCallback(async () => {
     const { data } = await supabase
@@ -60,14 +61,19 @@ export default function ExpensesPage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editRow) return
-    await supabase.from('expenses').update({
+    setUpdateError('')
+    const { error } = await supabase.from('expenses').update({
       date: form.date,
       item: form.item,
       value: parseFloat(form.value) || 0,
     }).eq('id', editRow.id)
-    setEditRow(null)
-    setForm(emptyForm)
-    fetchData()
+    if (error) {
+      setUpdateError(error.message)
+    } else {
+      setEditRow(null)
+      setForm(emptyForm)
+      fetchData()
+    }
   }
 
   if (loading) {
@@ -160,7 +166,7 @@ export default function ExpensesPage() {
           <div className="bg-white rounded-xl w-full max-w-lg">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">تعديل مصروف</h2>
-              <button onClick={() => { setEditRow(null); setForm(emptyForm) }} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => { setEditRow(null); setForm(emptyForm); setUpdateError('') }} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -182,9 +188,12 @@ export default function ExpensesPage() {
                 <input type="number" step="0.01" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })}
                   className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
               </div>
+              {updateError && (
+                <p className="text-red-500 text-sm">{updateError}</p>
+              )}
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium">حفظ</button>
-                <button type="button" onClick={() => { setEditRow(null); setForm(emptyForm) }}
+                <button type="button" onClick={() => { setEditRow(null); setForm(emptyForm); setUpdateError('') }}
                   className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
               </div>
             </form>

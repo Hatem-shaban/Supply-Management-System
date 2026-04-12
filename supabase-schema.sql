@@ -123,12 +123,12 @@ CREATE POLICY "anon_insert" ON transport_contractors FOR INSERT TO anon WITH CHE
 -- ============================================
 -- RLS Policies - Update for anon (frontend)
 -- ============================================
-CREATE POLICY "anon_update" ON cubic_records FOR UPDATE TO anon USING (true);
-CREATE POLICY "anon_update" ON vouchers FOR UPDATE TO anon USING (true);
-CREATE POLICY "anon_update" ON payments FOR UPDATE TO anon USING (true);
-CREATE POLICY "anon_update" ON quarry_pricing FOR UPDATE TO anon USING (true);
-CREATE POLICY "anon_update" ON expenses FOR UPDATE TO anon USING (true);
-CREATE POLICY "anon_update" ON transport_contractors FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_update" ON cubic_records FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_update" ON vouchers FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_update" ON payments FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_update" ON quarry_pricing FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_update" ON expenses FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_update" ON transport_contractors FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
 -- ============================================
 -- RLS Policies - Delete for anon (frontend)

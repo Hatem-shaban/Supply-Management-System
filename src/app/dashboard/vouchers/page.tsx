@@ -41,6 +41,7 @@ export default function VouchersPage() {
   const [editRow, setEditRow] = useState<Voucher | null>(null)
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
+  const [updateError, setUpdateError] = useState('')
   const [companies, setCompanies] = useState<string[]>([])
   const [contractors, setContractors] = useState<Array<{driver_name: string, tractor_number: string}>>([])  
 
@@ -120,6 +121,7 @@ export default function VouchersPage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editRow) return
+    setUpdateError('')
     const { error } = await supabase.from('vouchers').update({
       date: form.date,
       company_name: form.company_name,
@@ -133,7 +135,9 @@ export default function VouchersPage() {
       quarry_name: form.quarry_name,
       mashal_price: parseFloat(form.mashal_price) || 0,
     }).eq('id', editRow.id)
-    if (!error) {
+    if (error) {
+      setUpdateError(error.message)
+    } else {
       setEditRow(null)
       setForm(emptyForm)
       fetchData()
@@ -349,9 +353,12 @@ export default function VouchersPage() {
                 <input type="number" step="0.01" value={form.mashal_price} onChange={e => updateField('mashal_price', e.target.value)}
                   className="w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
+              {updateError && (
+                <p className="text-red-500 text-sm">{updateError}</p>
+              )}
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition font-medium">حفظ</button>
-                <button type="button" onClick={() => { setEditRow(null); setForm(emptyForm) }}
+                <button type="button" onClick={() => { setEditRow(null); setForm(emptyForm); setUpdateError('') }}
                   className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg hover:bg-gray-200 transition font-medium">إلغاء</button>
               </div>
             </form>
