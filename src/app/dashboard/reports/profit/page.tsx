@@ -145,14 +145,15 @@ export default function ProfitReportPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">تقرير صافي الربح</h1>
-        <ReportActions contentRef={reportRef} filename="profit-report" />
+      <div className="flex items-center justify-between mb-6 print:hidden">
+        <span />
+        <ReportActions contentRef={reportRef} filename="تقرير صافي الربح" />
       </div>
 
       <div ref={reportRef}>
+      <h1 className="text-2xl font-bold mb-6">تقرير صافي الربح</h1>
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4 items-end">
+      <div className="flex flex-wrap gap-3 mb-4 items-end print:hidden">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-500">الشركة</label>
           <select

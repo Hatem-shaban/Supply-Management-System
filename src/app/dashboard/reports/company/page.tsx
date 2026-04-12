@@ -83,13 +83,14 @@ export default function CompanyStatementPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">كشف حساب شركات</h1>
-        <ReportActions contentRef={reportRef} filename="company-statement" />
+      <div className="flex items-center justify-between mb-6 print:hidden">
+        <span />
+        <ReportActions contentRef={reportRef} filename="كشف حساب شركات" />
       </div>
 
       <div ref={reportRef}>
-      <div className="mb-4">
+      <h1 className="text-2xl font-bold mb-6">كشف حساب شركات</h1>
+      <div className="mb-4 print:hidden">
         <select
           value={selectedCompany}
           onChange={e => setSelectedCompany(e.target.value)}

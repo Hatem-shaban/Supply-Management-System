@@ -89,12 +89,13 @@ export default function FinalStatementPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">كشف حساب ختامي</h1>
-        <ReportActions contentRef={reportRef} filename="final-statement" />
+      <div className="flex items-center justify-between mb-6 print:hidden">
+        <span />
+        <ReportActions contentRef={reportRef} filename="كشف حساب ختامي" />
       </div>
 
       <div ref={reportRef}>
+      <h1 className="text-2xl font-bold mb-6">كشف حساب ختامي</h1>
       <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
         <div className="space-y-5">
           {/* User inputs */}
