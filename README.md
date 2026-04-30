@@ -42,6 +42,17 @@ vercel
 ```
 Add your environment variables in Vercel dashboard.
 
+### 6. Daily Activity Log Cron
+The app includes a Vercel cron job at `/api/cron/daily-activity-log`.
+
+1. For an existing project, run `supabase-daily-activity-log-migration.sql` in Supabase SQL Editor. For a fresh project, run the latest `supabase-schema.sql`.
+2. Add `CRON_SECRET` in Vercel project environment variables.
+3. Vercel runs the job daily from `vercel.json` at `22:05 UTC`. The endpoint logs the previous completed Cairo day and can be manually backfilled with:
+```bash
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  "https://YOUR_DOMAIN/api/cron/daily-activity-log?date=2026-04-28"
+```
+
 ## User Roles
 - **admin**: Full access to all screens and reports
 - **user**: Access only to بونات (Vouchers)

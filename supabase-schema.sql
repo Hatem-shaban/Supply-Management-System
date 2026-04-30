@@ -49,6 +49,16 @@ CREATE TABLE vouchers (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Daily voucher activity logs
+-- Stores one row per day, including days where no vouchers were added.
+CREATE TABLE daily_activity_logs (
+  id BIGSERIAL PRIMARY KEY,
+  activity_date DATE NOT NULL UNIQUE,
+  voucher_count INTEGER NOT NULL DEFAULT 0 CHECK (voucher_count >= 0),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- سجل الدفعات (Payment Records)
 CREATE TABLE payments (
   id BIGSERIAL PRIMARY KEY,
@@ -95,16 +105,54 @@ ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 -- App-level auth (JWT) gates the dashboard UI
 ALTER TABLE cubic_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vouchers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quarry_pricing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transport_contractors ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
+-- DB Functions
+-- ============================================
+CREATE OR REPLACE FUNCTION public.log_daily_voucher_activity(target_date DATE)
+RETURNS daily_activity_logs
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  logged_row daily_activity_logs;
+  day_start TIMESTAMPTZ;
+  day_end TIMESTAMPTZ;
+BEGIN
+  IF target_date IS NULL THEN
+    RAISE EXCEPTION 'target_date is required';
+  END IF;
+
+  day_start := target_date::timestamp AT TIME ZONE 'Africa/Cairo';
+  day_end := (target_date + 1)::timestamp AT TIME ZONE 'Africa/Cairo';
+
+  INSERT INTO daily_activity_logs (activity_date, voucher_count, updated_at)
+  SELECT
+    target_date,
+    COUNT(*)::INTEGER,
+    NOW()
+  FROM vouchers
+  WHERE created_at >= day_start
+    AND created_at < day_end
+  ON CONFLICT (activity_date) DO UPDATE
+    SET voucher_count = EXCLUDED.voucher_count,
+        updated_at = NOW()
+  RETURNING * INTO logged_row;
+
+  RETURN logged_row;
+END;
+$$;
+
+-- ============================================
 -- RLS Policies - Read access for anon (frontend)
 -- ============================================
 CREATE POLICY "anon_read" ON cubic_records FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_read" ON vouchers FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read" ON daily_activity_logs FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_read" ON payments FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_read" ON quarry_pricing FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_read" ON expenses FOR SELECT TO anon USING (true);
